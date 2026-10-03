@@ -117,11 +117,11 @@ android {
     }
   }
 
-  playConfigs {
-    googleRelease {
-      enabled.set(true)
-    }
-  }
+  // playConfigs {  // Disabled: triplet.play plugin removed
+  //   googleRelease {
+  //     enabled.set(true)
+  //   }
+  // }
 
   splits.abi {
     boolean enabled = project.hasProperty('splitApk')
