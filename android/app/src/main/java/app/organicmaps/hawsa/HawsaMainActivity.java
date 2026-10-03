@@ -46,7 +46,7 @@ public class HawsaMainActivity extends AppCompatActivity {
 
         // ===== البطاقات الأربع =====
 
-        // 1) الخريطة — يفتح MwmActivity (Organic Maps) مع إحداثيات الحسوة
+        // 1) الخريطة - opens map at Al-Haswa without green pin
         findViewById(R.id.card_map).setOnClickListener(v -> openMap());
 
         // 2) المد والجزر
@@ -72,13 +72,14 @@ public class HawsaMainActivity extends AppCompatActivity {
     }
 
     /**
-     * فتح خريطة الحسوة عبر MwmActivity مع تمرير الإحداثيات
+     * Open map at Al-Haswa coordinates via MwmActivity with custom extras.
+     * No geo: URI is used to prevent the green API pin from appearing.
      */
     private void openMap() {
         Intent intent = new Intent(this, MwmActivity.class);
-        intent.setAction(Intent.ACTION_VIEW);
-        intent.setData(android.net.Uri.parse(
-            "geo:" + DEFAULT_LAT + "," + DEFAULT_LON + "?z=" + DEFAULT_ZOOM));
+        intent.putExtra(MwmActivity.EXTRA_HAWSA_LAT, DEFAULT_LAT);
+        intent.putExtra(MwmActivity.EXTRA_HAWSA_LON, DEFAULT_LON);
+        intent.putExtra(MwmActivity.EXTRA_HAWSA_ZOOM, DEFAULT_ZOOM);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(intent);
     }
