@@ -53,7 +53,7 @@ nmcp = "1.4.4"
 
 okhttp = "5.3.2"
 
-triplet-play-publisher = "4.0.0"
+# triplet-play-publisher = "4.0.0"  # Disabled
 
 vanniktech-maven-publish = "0.36.0"
 
@@ -113,6 +113,6 @@ huawei-plugin = { id = "ru.cian.huawei-publish-gradle-plugin", version.ref = "hu
 nmcp = { id = "com.gradleup.nmcp", version.ref = "nmcp" }
 nmcp-aggregation = { id = "com.gradleup.nmcp.aggregation", version.ref = "nmcp" }
 
-triplet-play = { id = "com.github.triplet.play", version.ref = "triplet-play-publisher" }
+# triplet-play = { id = "com.github.triplet.play", version.ref = "triplet-play-publisher" }  # Disabled
 
 vanniktech-maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "vanniktech-maven-publish" }
