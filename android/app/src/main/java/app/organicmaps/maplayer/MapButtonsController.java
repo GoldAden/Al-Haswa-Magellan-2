@@ -125,7 +125,7 @@ public class MapButtonsController extends Fragment
     if (northButton != null)
     {
       northButton.setOnClickListener((v) -> mMapButtonClickListener.onMapButtonClick(MapButtons.north));
-      northButton.setVisibility(View.GONE);
+      northButton.setVisibility(View.VISIBLE);  // Al-Haswa: always show compass button
     }
 
     // Some buttons do not exist in navigation mode
@@ -233,10 +233,8 @@ public class MapButtonsController extends Fragment
     final View northBtn = mButtonsMap.get(MapButtons.north);
     if (northBtn == null)
       return;
-    boolean show = angleDeg > 5.0 && angleDeg < 355.0;
-    if (show != UiUtils.isVisible(northBtn))
-      UiUtils.showIf(show, northBtn);
-    if (show && northBtn instanceof FloatingActionButton)
+    // Al-Haswa Magellan: always visible, always rotates to show north direction
+    if (northBtn instanceof FloatingActionButton)
       northBtn.setRotation((float) angleDeg);
   }
 
