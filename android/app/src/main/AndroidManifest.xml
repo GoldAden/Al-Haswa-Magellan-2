@@ -426,11 +426,38 @@
       android:label="@string/app_name"
       android:targetActivity="app.organicmaps.SplashActivity"
       android:exported="true">
+      <!-- Launcher moved to HawsaMainActivity -->
+    </activity-alias>
+
+    <!-- ===== الحسوة ماجلان — الواجهة الرئيسية ===== -->
+    <activity
+        android:name="app.organicmaps.hawsa.HawsaMainActivity"
+        android:theme="@style/MwmTheme"
+        android:screenOrientation="portrait"
+        android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
-    </activity-alias>
+    </activity>
+
+    <activity
+        android:name="app.organicmaps.hawsa.HawsaTidesActivity"
+        android:theme="@style/MwmTheme"
+        android:screenOrientation="portrait"
+        android:parentActivityName="app.organicmaps.hawsa.HawsaMainActivity" />
+
+    <activity
+        android:name="app.organicmaps.hawsa.HawsaMoonActivity"
+        android:theme="@style/MwmTheme"
+        android:screenOrientation="portrait"
+        android:parentActivityName="app.organicmaps.hawsa.HawsaMainActivity" />
+
+    <activity
+        android:name="app.organicmaps.hawsa.HawsaCompassActivity"
+        android:theme="@style/MwmTheme"
+        android:screenOrientation="portrait"
+        android:parentActivityName="app.organicmaps.hawsa.HawsaMainActivity" />
 
     <activity
         android:name="app.organicmaps.MwmActivity"
