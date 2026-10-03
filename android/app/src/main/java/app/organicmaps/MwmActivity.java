@@ -143,6 +143,10 @@ public class MwmActivity extends BaseMwmFragmentActivity
   public static final String EXTRA_BOOKMARK_ID = "bookmark_id";
   public static final String EXTRA_TRACK_ID = "track_id";
   public static final String EXTRA_UPDATE_THEME = "update_theme";
+  // Al-Haswa Magellan: extras for viewport without green pin
+  public static final String EXTRA_HAWSA_LAT = "hawsa_lat";
+  public static final String EXTRA_HAWSA_LON = "hawsa_lon";
+  public static final String EXTRA_HAWSA_ZOOM = "hawsa_zoom";
   // Stored both in the saved instance state and, when the core restarts, in the intent itself.
   static final String EXTRA_CONSUMED = "mwm.extra.intent.processed";
   private boolean mIntentConsumed = false;
@@ -288,6 +292,17 @@ public class MwmActivity extends BaseMwmFragmentActivity
     else if (categoryId != -1)
     {
       BookmarkManager.INSTANCE.showBookmarkCategoryOnMap(categoryId);
+      return;
+    }
+
+    // Al-Haswa Magellan: open map at coordinates WITHOUT green pin
+    if (intent.hasExtra(EXTRA_HAWSA_LAT) && intent.hasExtra(EXTRA_HAWSA_LON))
+    {
+      double lat = intent.getDoubleExtra(EXTRA_HAWSA_LAT, 0);
+      double lon = intent.getDoubleExtra(EXTRA_HAWSA_LON, 0);
+      int zoom = intent.getIntExtra(EXTRA_HAWSA_ZOOM, 10);
+      Framework.nativeSetViewportCenter(lat, lon, zoom);
+      Framework.nativeStopLocationFollow();
       return;
     }
 
