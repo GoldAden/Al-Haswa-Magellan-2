@@ -11,7 +11,7 @@
     style="@style/MwmWidget.MapButton"
     app:srcCompat="@drawable/ic_north_arrow"
     android:layout_marginBottom="@dimen/margin_half"
-    android:visibility="gone"
+    android:visibility="visible"
     android:contentDescription="@string/north_arrow"/>
   <com.google.android.material.floatingactionbutton.FloatingActionButton
     android:id="@+id/nav_zoom_in"
