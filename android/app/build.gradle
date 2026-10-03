@@ -18,8 +18,8 @@ ext.googleFirebaseServicesEnabled = googleServicesFileValid &&
         googleFirebaseServicesDefault)
 
 apply plugin: 'com.android.application'
-apply plugin: 'com.github.triplet.play'
-apply plugin: 'ru.cian.huawei-publish-gradle-plugin'
+// apply plugin: 'com.github.triplet.play'  // Disabled: plugin not found in repos
+// apply plugin: 'ru.cian.huawei-publish-gradle-plugin'  // Disabled: not needed for Al-Haswa build
 
 if (googleFirebaseServicesEnabled) {
   println('Building with Google Firebase Services')
@@ -36,9 +36,9 @@ apply from: "${rootProject.rootDir}/groovy/permission-checker.gradle"
 
 import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.ResValue
-import com.github.triplet.gradle.androidpublisher.ReleaseStatus
-import ru.cian.huawei.publish.ReleaseNote
-import ru.cian.huawei.publish.ReleaseNotesExtension
+// import com.github.triplet.gradle.androidpublisher.ReleaseStatus  // Disabled
+// import ru.cian.huawei.publish.ReleaseNote  // Disabled
+// import ru.cian.huawei.publish.ReleaseNote  // DisabledsExtension
 
 def getCommitMessage() {
   return run(['git', '--no-pager', 'show', '-s', '--format=%s%n%n%b', 'HEAD']).trim()
@@ -392,56 +392,56 @@ tasks.register("prepareGoogleReleaseListing") {
   }
 }
 
-play {
-  enabled.set(false)
-  track.set('production')
-  defaultToAppBundles.set(true)
-  releaseStatus.set(ReleaseStatus.IN_PROGRESS)
-  serviceAccountCredentials.set(file('google-play.json'))
-}
+//play {
+//  enabled.set(false)
+//  track.set('production')
+//  defaultToAppBundles.set(true)
+//  releaseStatus.set(ReleaseStatus.IN_PROGRESS)
+//  serviceAccountCredentials.set(file('google-play.json'))
+//}
 
-huaweiPublish {
-  instances {
-    huaweiRelease {
-      credentialsPath = "$projectDir/huawei-appgallery.json"
-      buildFormat = 'aab'
-      deployType = 'draft' // Requires manual confirmation in Huawei AppGallery Connect.
-      def releaseDescriptions = []
-      def localeOverride = [
-          'am'   : 'am_ET',
-          'as'   : 'as_IN',
-          'gu'   : 'gu_IN',
-          'iw-IL': 'he_IL',
-          'kn-IN': 'kn_IN',
-//          'mai'  : 'mai_Deva_IN',
-          'mi'   : 'mi_NZ',
-          'ml-IN': 'ml_IN',
-          'mn-MN': 'mn_MN',
-          'mr-IN': 'mr_IN',
-          'or'   : 'or_IN',
-//          'pa-IN' : 'pa_Guru_IN',
-          'sw'   : 'sw_TZ',
-          'ta-IN': 'ta_IN',
-          'te-IN': 'te_IN',
-          'ug'   : 'ug_CN',
-      ]
-      def files = fileTree(dir: "$projectDir/src/fdroid/play/listings",
-          include: '**/release-notes.txt')
-      files.each { File file ->
-        def locale = file.parentFile.getName()
-        if (locale in ['af', 'en-AU', 'en-CA', 'en-IN', 'en-SG', 'en-ZA',
-            'es-US', 'fa-AE', 'fa-AF', 'fr-CA', 'hy-AM', 'is-IS', 'ky-KG',
-            'ms-MY', 'rm', 'sq', 'zu',
-            'ta-IN', 'te-IN',  // Not supported in Huawei
-            'mai', 'pa',       // Excluded temporarily due to "max language length > 8" error when publishing
-            ]) {
-          return // These locales are not supported by Huawei AppGallery, skip them.
-        }
-        def path = file.getPath()
-        locale = localeOverride.get(locale, locale)
-        releaseDescriptions.add(new ReleaseNote(locale, path))
-      }
-      releaseNotes = new ReleaseNotesExtension(releaseDescriptions, true)
-    }
-  }
-}
+//huaweiPublish {
+//  instances {
+//    huaweiRelease {
+//      credentialsPath = "$projectDir/huawei-appgallery.json"
+//      buildFormat = 'aab'
+//      deployType = 'draft' // Requires manual confirmation in Huawei AppGallery Connect.
+//      def releaseDescriptions = []
+//      def localeOverride = [
+//          'am'   : 'am_ET',
+//          'as'   : 'as_IN',
+//          'gu'   : 'gu_IN',
+//          'iw-IL': 'he_IL',
+//          'kn-IN': 'kn_IN',
+////          'mai'  : 'mai_Deva_IN',
+//          'mi'   : 'mi_NZ',
+//          'ml-IN': 'ml_IN',
+//          'mn-MN': 'mn_MN',
+//          'mr-IN': 'mr_IN',
+//          'or'   : 'or_IN',
+////          'pa-IN' : 'pa_Guru_IN',
+//          'sw'   : 'sw_TZ',
+//          'ta-IN': 'ta_IN',
+//          'te-IN': 'te_IN',
+//          'ug'   : 'ug_CN',
+//      ]
+//      def files = fileTree(dir: "$projectDir/src/fdroid/play/listings",
+//          include: '**/release-notes.txt')
+//      files.each { File file ->
+//        def locale = file.parentFile.getName()
+//        if (locale in ['af', 'en-AU', 'en-CA', 'en-IN', 'en-SG', 'en-ZA',
+//            'es-US', 'fa-AE', 'fa-AF', 'fr-CA', 'hy-AM', 'is-IS', 'ky-KG',
+//            'ms-MY', 'rm', 'sq', 'zu',
+//            'ta-IN', 'te-IN',  // Not supported in Huawei
+//            'mai', 'pa',       // Excluded temporarily due to "max language length > 8" error when publishing
+//            ]) {
+//          return // These locales are not supported by Huawei AppGallery, skip them.
+//        }
+//        def path = file.getPath()
+//        locale = localeOverride.get(locale, locale)
+//        releaseDescriptions.add(new ReleaseNote(locale, path))
+//      }
+//      releaseNotes = new ReleaseNotesExtension(releaseDescriptions, true)
+//    }
+//  }
+//}
