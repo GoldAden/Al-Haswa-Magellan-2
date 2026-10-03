@@ -9,8 +9,8 @@ plugins {
     alias libs.plugins.google.firebase.crashlytics apply false
     alias libs.plugins.google.firebase.appdistribution apply false
 
-    alias libs.plugins.triplet.play apply false
-    alias libs.plugins.huawei.plugin apply false
+    // alias libs.plugins.triplet.play apply false  // Disabled: plugin not found in repos
+    // alias libs.plugins.huawei.plugin apply false  // Disabled: not needed for Al-Haswa build
 
     alias libs.plugins.vanniktech.maven.publish apply false
 
