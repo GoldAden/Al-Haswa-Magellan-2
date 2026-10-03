@@ -4,7 +4,30 @@
   android:height="24dp"
   android:viewportWidth="24"
   android:viewportHeight="24">
+  <!-- Outer compass ring -->
+  <path
+    android:fillColor="#00000000"
+    android:strokeColor="#E53935"
+    android:strokeWidth="1.2"
+    android:pathData="M12,12m-10.5,0a10.5,10.5 0,1 1,21 0a10.5,10.5 0,1 1,-21 0"/>
+  <!-- Red north needle (upper) -->
+  <path
+    android:fillColor="#E53935"
+    android:pathData="M12,2.5L9.5,12h5L12,2.5z"/>
+  <!-- Dark red tip -->
+  <path
+    android:fillColor="#C62828"
+    android:pathData="M10.8,5.5L12,2.5l1.2,3h-2.4z"/>
+  <!-- Gray south needle (lower) -->
+  <path
+    android:fillColor="#9E9E9E"
+    android:pathData="M12,21.5L9.5,12h5L12,21.5z"/>
+  <!-- Center pivot -->
   <path
     android:fillColor="#FFFFFF"
-    android:pathData="M12,2L8,10h3v12h2V10h3L12,2z"/>
+    android:pathData="M12,11.2a0.8,0.8 0,1 0,0 1.6a0.8,0.8 0,1 0,0 -1.6"/>
+  <!-- N label -->
+  <path
+    android:fillColor="#E53935"
+    android:pathData="M11,0.8h0.5v1.2L11,0.8z"/>
 </vector>
