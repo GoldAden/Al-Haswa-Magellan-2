@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="hawsa_status_bar_color">#0D1B2A</color>
+    <color name="hawsa_bg_dark">#0D1B2A</color>
+    <color name="hawsa_card_bg">#1B263B</color>
+    <color name="hawsa_text_primary">#E0E1DD</color>
+    <color name="hawsa_text_secondary">#778DA9</color>
+    <color name="hawsa_accent">#415A77</color>
+</resources>
