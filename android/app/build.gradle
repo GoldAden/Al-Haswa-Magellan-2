@@ -38,7 +38,7 @@ import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.ResValue
 // import com.github.triplet.gradle.androidpublisher.ReleaseStatus  // Disabled
 // import ru.cian.huawei.publish.ReleaseNote  // Disabled
-// import ru.cian.huawei.publish.ReleaseNote  // DisabledsExtension
+// import ru.cian.huawei.publish.ReleaseNotesExtension  // Disabled
 
 def getCommitMessage() {
   return run(['git', '--no-pager', 'show', '-s', '--format=%s%n%n%b', 'HEAD']).trim()
