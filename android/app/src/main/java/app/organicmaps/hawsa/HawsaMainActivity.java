@@ -18,7 +18,7 @@ public class HawsaMainActivity extends AppCompatActivity {
 
     private static final double DEFAULT_LAT = 19.4431;
     private static final double DEFAULT_LON = 40.5167;
-    private static final int DEFAULT_ZOOM = 10;
+    private static final int DEFAULT_ZOOM = 6;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
