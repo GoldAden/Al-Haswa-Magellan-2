@@ -3,65 +3,48 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/hawsa_main_bg">
+    android:background="#0F1723">
 
     <!-- Scrollable content: header + cards -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
-        android:paddingBottom="70dp">
+        android:scrollbars="none"
+        android:paddingBottom="56dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- ===== Header with background image ===== -->
-            <FrameLayout
+            <!-- ===== Header: Text on right, Logo on left (RTL) ===== -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="220dp">
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="32dp"
+                android:paddingBottom="20dp">
 
-                <ImageView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/hawsa_header"
-                    android:contentDescription="@string/hawsa_header_desc" />
-
-                <!-- Dark gradient overlay for text readability -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/hawsa_header_overlay" />
-
-                <!-- Logo + App name above image -->
+                <!-- Text area (RTL: appears on the right side) -->
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:orientation="vertical"
-                    android:gravity="center"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
-                        android:src="@drawable/ic_hawsa_logo"
-                        android:contentDescription="@string/hawsa_logo_desc"
-                        android:layout_marginBottom="8dp" />
+                    android:gravity="end">
 
                     <TextView
                         android:id="@+id/tv_app_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/hawsa_app_title"
-                        android:textSize="30sp"
+                        android:textSize="32sp"
                         android:textColor="#D4AF37"
                         android:textStyle="bold"
-                        android:shadowColor="#80000000"
-                        android:shadowDx="2"
-                        android:shadowDy="2"
-                        android:shadowRadius="4"
                         android:letterSpacing="0.04" />
 
                     <TextView
@@ -70,15 +53,20 @@
                         android:layout_height="wrap_content"
                         android:text="@string/hawsa_app_subtitle"
                         android:textSize="14sp"
-                        android:textColor="#FFFFFF"
-                        android:shadowColor="#80000000"
-                        android:shadowDx="1"
-                        android:shadowDy="1"
-                        android:shadowRadius="3"
+                        android:textColor="#CCFFFFFF"
                         android:layout_marginTop="4dp" />
 
                 </LinearLayout>
-            </FrameLayout>
+
+                <!-- Boat Logo (appears on the left side in RTL) -->
+                <ImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:src="@drawable/ic_hawsa_logo"
+                    android:contentDescription="@string/hawsa_logo_desc"
+                    android:layout_marginStart="16dp" />
+
+            </LinearLayout>
 
             <!-- ===== 2x2 Card Grid ===== -->
             <LinearLayout
@@ -87,7 +75,7 @@
                 android:orientation="vertical"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:paddingTop="16dp">
+                android:paddingTop="8dp">
 
                 <!-- Row 1 -->
                 <LinearLayout
@@ -96,114 +84,98 @@
                     android:orientation="horizontal"
                     android:baselineAligned="false">
 
-                    <!-- Card: Map -->
-                    <FrameLayout
+                    <!-- Card: Compass (Bronze/Gold) -->
+                    <LinearLayout
+                        android:id="@+id/card_compass"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_margin="6dp"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:padding="20dp"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:background="@drawable/hawsa_card_bg_gold_bronze">
+
+                        <ImageView
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_hawsa_compass"
+                            android:contentDescription="@string/hawsa_compass_card"
+                            android:layout_marginBottom="10dp"
+                            app:tint="#FFFFFF" />
+
+                        <!-- Gold accent bar -->
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="2dp"
+                            android:background="#D4AF37"
+                            android:layout_marginBottom="10dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_compass_card"
+                            android:textSize="17sp"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_compass_card_desc"
+                            android:textSize="11sp"
+                            android:textColor="#CCFFFFFF"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <!-- Card: Map (Deep Blue) -->
+                    <LinearLayout
                         android:id="@+id/card_map"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_margin="6dp"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:padding="20dp"
                         android:foreground="?attr/selectableItemBackground"
-                        android:background="@drawable/hawsa_card_bg_gold">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:gravity="center_horizontal"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="52dp"
-                                android:layout_height="52dp"
-                                android:src="@drawable/ic_hawsa_map"
-                                android:contentDescription="@string/hawsa_map_card"
-                                android:layout_marginBottom="10dp"
-                                app:tint="#D4AF37" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_map_card"
-                                android:textSize="16sp"
-                                android:textColor="#D4AF37"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_map_card_desc"
-                                android:textSize="11sp"
-                                android:textColor="#FFFFFF"
-                                android:gravity="center"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
-
-                        <!-- Navigation chevron -->
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="top|start"
-                            android:layout_marginTop="12dp"
-                            android:layout_marginStart="12dp"
-                            android:src="@drawable/ic_hawsa_chevron"
-                            android:contentDescription="open"
-                            app:tint="#FFFFFF" />
-                    </FrameLayout>
-
-                    <!-- Card: Tides -->
-                    <FrameLayout
-                        android:id="@+id/card_tides"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_margin="6dp"
-                        android:foreground="?attr/selectableItemBackground"
-                        android:background="@drawable/hawsa_card_bg_gold">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:gravity="center_horizontal"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="52dp"
-                                android:layout_height="52dp"
-                                android:src="@drawable/ic_hawsa_tides"
-                                android:contentDescription="@string/hawsa_tides_card"
-                                android:layout_marginBottom="10dp"
-                                app:tint="#D4AF37" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_tides_card"
-                                android:textSize="16sp"
-                                android:textColor="#D4AF37"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_tides_card_desc"
-                                android:textSize="11sp"
-                                android:textColor="#FFFFFF"
-                                android:gravity="center"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
+                        android:background="@drawable/hawsa_card_bg_blue">
 
                         <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="top|start"
-                            android:layout_marginTop="12dp"
-                            android:layout_marginStart="12dp"
-                            android:src="@drawable/ic_hawsa_chevron"
-                            android:contentDescription="open"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_hawsa_map"
+                            android:contentDescription="@string/hawsa_map_card"
+                            android:layout_marginBottom="10dp"
                             app:tint="#FFFFFF" />
-                    </FrameLayout>
+
+                        <!-- White accent bar -->
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="2dp"
+                            android:background="#FFFFFF"
+                            android:layout_marginBottom="10dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_map_card"
+                            android:textSize="17sp"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_map_card_desc"
+                            android:textSize="11sp"
+                            android:textColor="#CCFFFFFF"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
                 </LinearLayout>
 
                 <!-- Row 2 -->
@@ -213,113 +185,98 @@
                     android:orientation="horizontal"
                     android:baselineAligned="false">
 
-                    <!-- Card: Moon -->
-                    <FrameLayout
+                    <!-- Card: Moon (Deep Purple) -->
+                    <LinearLayout
                         android:id="@+id/card_moon"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_margin="6dp"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:padding="20dp"
                         android:foreground="?attr/selectableItemBackground"
-                        android:background="@drawable/hawsa_card_bg_gold">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:gravity="center_horizontal"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="52dp"
-                                android:layout_height="52dp"
-                                android:src="@drawable/ic_hawsa_moon"
-                                android:contentDescription="@string/hawsa_moon_card"
-                                android:layout_marginBottom="10dp"
-                                app:tint="#D4AF37" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_moon_card"
-                                android:textSize="16sp"
-                                android:textColor="#D4AF37"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_moon_card_desc"
-                                android:textSize="11sp"
-                                android:textColor="#FFFFFF"
-                                android:gravity="center"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
+                        android:background="@drawable/hawsa_card_bg_purple">
 
                         <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="top|start"
-                            android:layout_marginTop="12dp"
-                            android:layout_marginStart="12dp"
-                            android:src="@drawable/ic_hawsa_chevron"
-                            android:contentDescription="open"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_hawsa_moon"
+                            android:contentDescription="@string/hawsa_moon_card"
+                            android:layout_marginBottom="10dp"
                             app:tint="#FFFFFF" />
-                    </FrameLayout>
 
-                    <!-- Card: Compass -->
-                    <FrameLayout
-                        android:id="@+id/card_compass"
+                        <!-- Orange accent bar -->
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="2dp"
+                            android:background="#E8960C"
+                            android:layout_marginBottom="10dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_moon_card"
+                            android:textSize="17sp"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_moon_card_desc"
+                            android:textSize="11sp"
+                            android:textColor="#CCFFFFFF"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <!-- Card: Tides (Teal/Green) -->
+                    <LinearLayout
+                        android:id="@+id/card_tides"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_margin="6dp"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:padding="20dp"
                         android:foreground="?attr/selectableItemBackground"
-                        android:background="@drawable/hawsa_card_bg_gold">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:gravity="center_horizontal"
-                            android:padding="16dp">
-
-                            <ImageView
-                                android:layout_width="52dp"
-                                android:layout_height="52dp"
-                                android:src="@drawable/ic_hawsa_compass"
-                                android:contentDescription="@string/hawsa_compass_card"
-                                android:layout_marginBottom="10dp"
-                                app:tint="#D4AF37" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_compass_card"
-                                android:textSize="16sp"
-                                android:textColor="#D4AF37"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/hawsa_compass_card_desc"
-                                android:textSize="11sp"
-                                android:textColor="#FFFFFF"
-                                android:gravity="center"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
+                        android:background="@drawable/hawsa_card_bg_teal">
 
                         <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="top|start"
-                            android:layout_marginTop="12dp"
-                            android:layout_marginStart="12dp"
-                            android:src="@drawable/ic_hawsa_chevron"
-                            android:contentDescription="open"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:src="@drawable/ic_hawsa_tides"
+                            android:contentDescription="@string/hawsa_tides_card"
+                            android:layout_marginBottom="10dp"
                             app:tint="#FFFFFF" />
-                    </FrameLayout>
+
+                        <!-- White accent bar -->
+                        <View
+                            android:layout_width="40dp"
+                            android:layout_height="2dp"
+                            android:background="#FFFFFF"
+                            android:layout_marginBottom="10dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_tides_card"
+                            android:textSize="17sp"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/hawsa_tides_card_desc"
+                            android:textSize="11sp"
+                            android:textColor="#CCFFFFFF"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
                 </LinearLayout>
 
             </LinearLayout>
@@ -334,25 +291,10 @@
         android:orientation="vertical"
         android:gravity="center"
         android:layout_gravity="bottom"
-        android:background="#0D1B2A"
-        android:paddingTop="12dp"
-        android:paddingBottom="20dp"
+        android:background="#0F1723"
+        android:paddingTop="8dp"
+        android:paddingBottom="16dp"
         android:elevation="8dp">
-
-        <!-- Thin gold separator line -->
-        <View
-            android:layout_width="80dp"
-            android:layout_height="1dp"
-            android:background="#D4AF37"
-            android:layout_marginBottom="8dp" />
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_hawsa_mountain_footer"
-            android:contentDescription="mountain"
-            android:layout_marginBottom="4dp"
-            app:tint="#D4AF37" />
 
         <TextView
             android:id="@+id/tv_designer"
@@ -360,7 +302,7 @@
             android:layout_height="wrap_content"
             android:text="@string/hawsa_designer_credit"
             android:textSize="11sp"
-            android:textColor="#D4AF37" />
+            android:textColor="#99AABB" />
     </LinearLayout>
 
 </FrameLayout>
