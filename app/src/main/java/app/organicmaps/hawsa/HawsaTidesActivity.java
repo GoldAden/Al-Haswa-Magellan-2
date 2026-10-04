@@ -62,22 +62,8 @@ public class HawsaTidesActivity extends AppCompatActivity {
         tideChart = findViewById(R.id.tide_chart);
 
         dayButtonsContainer = findViewById(R.id.day_button_container);
-        if (dayButtonsContainer == null) {
-            dayButtonsContainer = new LinearLayout(this);
-            dayButtonsContainer.setOrientation(LinearLayout.HORIZONTAL);
-            dayButtonsContainer.setPadding(0, 16, 0, 0);
-            LinearLayout chartParent = (LinearLayout) tideChart.getParent().getParent();
-            chartParent.addView(dayButtonsContainer);
-        }
 
         weeklyContainer = findViewById(R.id.weekly_tides_container);
-        if (weeklyContainer == null) {
-            weeklyContainer = new LinearLayout(this);
-            weeklyContainer.setOrientation(LinearLayout.VERTICAL);
-            ScrollView parent = (ScrollView) tideChart.getParent().getParent().getParent().getParent();
-            LinearLayout root = (LinearLayout) parent.getChildAt(0);
-            root.addView(weeklyContainer);
-        }
 
         selectedDay = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
         updateChart();
@@ -86,6 +72,7 @@ public class HawsaTidesActivity extends AppCompatActivity {
     }
 
     private void createDayButtons() {
+        if (dayButtonsContainer == null) return;
         dayButtonsContainer.removeAllViews();
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
 
@@ -176,7 +163,6 @@ public class HawsaTidesActivity extends AppCompatActivity {
         row.addView(tvDayHeader);
 
         // Build 4 event lines in chronological order
-        // We need to order: events by time, alternating between high (مد) and low (جزر)
         java.util.ArrayList<TideCalculator.TideEvent> sortedEvents = new java.util.ArrayList<>();
         if (day.firstLow != null) sortedEvents.add(day.firstLow);
         if (day.firstHigh != null) sortedEvents.add(day.firstHigh);
