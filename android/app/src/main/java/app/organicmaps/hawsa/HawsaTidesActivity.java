@@ -66,7 +66,7 @@ public class HawsaTidesActivity extends AppCompatActivity {
         tideChart = findViewById(R.id.tide_chart);
 
         // Day buttons
-        dayButtonsContainer = findViewById(R.id.day_buttons_container);
+        dayButtonsContainer = findViewById(R.id.day_button_container);
         if (dayButtonsContainer == null) {
             dayButtonsContainer = new LinearLayout(this);
             dayButtonsContainer.setOrientation(LinearLayout.HORIZONTAL);
@@ -185,7 +185,7 @@ public class HawsaTidesActivity extends AppCompatActivity {
         tvDay.setText(dayName);
         tvDay.setTextSize(16);
         tvDay.setTextColor(0xFFE0E1DD);
-        tvDay.setFakeBoldText(true);
+        tvDay.getPaint().setFakeBoldText(true);
         leftInfo.addView(tvDay);
 
         TextView tvDate = new TextView(this);
