@@ -1,5 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Hawsa Main Screen -->
+    <string name="hawsa_wifi_connected">متصل بالشبكة</string>
+    <string name="hawsa_app_title">الحسوة ماجلان</string>
+    <string name="hawsa_app_subtitle">دليلك البحري الشامل</string>
+    <string name="hawsa_logo_desc">شعار الحسوة ماجلان</string>
+    <string name="hawsa_map_card">الخريطة</string>
+    <string name="hawsa_map_card_desc">استكشف خريطة الحسوة البحرية مع المعالم والأعماق</string>
+    <string name="hawsa_tides_card">المد والجزر</string>
+    <string name="hawsa_tides_card_desc">توقعات المد والجزر اليومية والأسبوعية</string>
+    <string name="hawsa_moon_card">القمر</string>
+    <string name="hawsa_moon_card_desc">طور القمر والتاريخ الهجري وأوقات الشروق والغروب</string>
+    <string name="hawsa_compass_card">البوصلة والقبلة</string>
+    <string name="hawsa_compass_card_desc">اتجاه القبلة والبوصلة البحرية</string>
+
     <!-- Hawsa Tides -->
     <string name="hawsa_tides_title">المد والجزر</string>
     <string name="hawsa_tides_weekly_summary">ملخص الأسبوع</string>
