@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- الواجهة الرئيسية -->
-    <string name="hawsa_app_title">الحسوة مجلان</string>
-    <string name="hawsa_designer_credit">تصميم: غولد آدن</string>
+    <string name="hawsa_app_title">الحسوة ماجلان</string>
+    <string name="hawsa_app_subtitle">دليلك للملاحة واستكشاف البر والبحر</string>
+    <string name="hawsa_designer_credit">تم تصميم هذا التطبيق من قبل أصيل صادق</string>
+    <string name="hawsa_header_desc">منظر خليج الحسوة</string>
+    <string name="hawsa_logo_desc">شعار الحسوة ماجلان</string>
 
     <!-- بطاقات الواجهة -->
     <string name="hawsa_map_card">الخريطة</string>
