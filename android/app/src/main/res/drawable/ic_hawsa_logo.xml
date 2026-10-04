@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Stylized logo: mountain + river + pin -->
+    <!-- Mountain -->
+    <path
+        android:pathData="M6,32 L14,16 L22,32 Z"
+        android:fillColor="#D4AF37" />
+    <!-- Small mountain -->
+    <path
+        android:pathData="M16,32 L22,20 L28,32 Z"
+        android:fillColor="#C49B2F" />
+    <!-- River path -->
+    <path
+        android:pathData="M4,34 Q12,30 20,34 Q28,38 36,34 Q40,32 44,34"
+        android:strokeColor="#D4AF37"
+        android:strokeWidth="2"
+        android:fillColor="#00000000" />
+    <!-- Location pin -->
+    <path
+        android:pathData="M36,12 C36,8 32,6 30,8 C28,10 28,14 30,16 L33,21 L36,16 C38,14 38,10 36,12 Z"
+        android:fillColor="#E53935" />
+    <path
+        android:pathData="M33,11 C33,9.5 31.5,8.5 30.5,9.5 C29.5,10.5 29.5,12.5 30.5,13.5 L33,17 L33,13 C34,12 34,10 33,11 Z"
+        android:fillColor="#FF8A80" />
+</vector>
