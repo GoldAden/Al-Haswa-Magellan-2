@@ -24,7 +24,7 @@ public class HawsaMainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Window setup
+        // Window setup - dark status bar
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(true);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -41,8 +41,29 @@ public class HawsaMainActivity extends AppCompatActivity {
             }
         }
 
+        // Force RTL layout direction for Arabic
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        }
+
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_hawsa_main);
+
+        // ===== Set text colors from resources for new layout =====
+        TextView tvTitle = findViewById(R.id.tv_app_title);
+        if (tvTitle != null) {
+            tvTitle.setTextColor(ContextCompat.getColor(this, R.color.hawsa_gold));
+        }
+
+        TextView tvSubtitle = findViewById(R.id.tv_app_subtitle);
+        if (tvSubtitle != null) {
+            tvSubtitle.setTextColor(ContextCompat.getColor(this, R.color.hawsa_white));
+        }
+
+        TextView tvDesigner = findViewById(R.id.tv_designer);
+        if (tvDesigner != null) {
+            tvDesigner.setTextColor(ContextCompat.getColor(this, R.color.hawsa_gold));
+        }
 
         // ===== البطاقات الأربع =====
 
