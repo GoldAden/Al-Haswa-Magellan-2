@@ -9,13 +9,17 @@
 
     <!-- بطاقات الواجهة -->
     <string name="hawsa_map_card">الخريطة</string>
-    <string name="hawsa_map_card_desc">خريطة الحسوة بدون إنترنت</string>
+    <string name="hawsa_map_card_desc">استكشاف مواقعك بكل سهولة</string>
     <string name="hawsa_tides_card">المد والجزر</string>
     <string name="hawsa_tides_card_desc">رسم بياني وتوقعات أسبوعية</string>
     <string name="hawsa_moon_card">معلومات القمر</string>
     <string name="hawsa_moon_card_desc">أطوار القمر وتوقعات أسبوعية</string>
     <string name="hawsa_compass_card">البوصلة والقبلة</string>
     <string name="hawsa_compass_card_desc">بوصلة حقيقية واتجاه القبلة وأوقات الأذان</string>
+
+    <!-- شريط المعلومات -->
+    <string name="hawsa_wifi_connected">متصل بالشبكة</string>
+    <string name="hawsa_wifi_disconnected">غير متصل</string>
 
     <!-- صفحة المد والجزر -->
     <string name="hawsa_tides_title">المد والجزر</string>
