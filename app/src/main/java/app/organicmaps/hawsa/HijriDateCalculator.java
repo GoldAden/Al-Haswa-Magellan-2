@@ -5,18 +5,10 @@ import java.util.TimeZone;
 
 /**
  * Islamic (Hijri) lunar calendar date calculator
- * Uses the tabular Islamic calendar algorithm for approximate Hijri dates.
- * Based on the civil Hijri calendar algorithm by Kasgar/Al-Faruqi.
+ * Uses the standard tabular Islamic calendar algorithm.
  * Accuracy: ±1 day compared to actual lunar observation.
  */
 public class HijriDateCalculator {
-
-    // Days in each Hijri month in a 30-year cycle
-    private static final int[] MONTH_DAYS_30Y = {
-        355, 354, 355, 354, 355, 354, 355, 354, 355, 354, // years 1-10
-        355, 354, 354, 355, 354, 355, 354, 355, 354, 355, // years 11-20
-        354, 355, 354, 354, 355, 354, 355, 354, 355, 354  // years 21-30
-    };
 
     // Hijri month names in Arabic
     private static final String[] HIJRI_MONTHS_AR = {
@@ -28,17 +20,21 @@ public class HijriDateCalculator {
     // Reference: July 16, 622 CE (1 Muharram 1 AH) = Julian Day 1948439
     private static final long HIJRI_EPOCH_JD = 1948439;
 
+    // Mean synodic month length
+    private static final double SYNODIC_MONTH = 29.53058867;
+
+    // Mean lunar year length (12 synodic months)
+    private static final double LUNAR_YEAR = 354.36667;
+
     /**
      * Convert Gregorian calendar to Hijri date
      */
     public static HijriDate toHijri(Calendar gregorian) {
-        // Convert Gregorian to Julian Day Number
         int year = gregorian.get(Calendar.YEAR);
         int month = gregorian.get(Calendar.MONTH) + 1; // Calendar.MONTH is 0-based
         int day = gregorian.get(Calendar.DAY_OF_MONTH);
 
         long jd = gregorianToJD(year, month, day);
-
         return jdToHijri(jd);
     }
 
@@ -56,52 +52,63 @@ public class HijriDateCalculator {
     }
 
     /**
-     * Julian Day Number to Hijri date
+     * Julian Day Number to Hijri date using standard tabular Islamic calendar algorithm.
+     * Uses synodic month division for robust year calculation
+     * covering the full range of possible Hijri dates.
      */
     private static HijriDate jdToHijri(long jd) {
-        // Adjust for epoch
-        long adjustedJD = jd - HIJRI_EPOCH_JD;
+        // Adjust for epoch: days since 1 Muharram 1 AH
+        long daysSinceEpoch = jd - HIJRI_EPOCH_JD;
 
-        // Calculate Hijri year and day
-        int hijriYear = 1;
-        long remainingDays = adjustedJD;
+        // Estimate the Hijri year using the mean lunar year length
+        int hijriYear = (int) Math.floor(daysSinceEpoch / LUNAR_YEAR) + 1;
 
-        // Calculate year
-        for (int cycle = 0; cycle < 100; cycle++) {
-            int baseYear = cycle * 30;
-            for (int y = 0; y < 30; y++) {
-                int yearDays = getHijriYearDays(y);
-                if (remainingDays < yearDays) {
-                    hijriYear = baseYear + y + 1;
-                    return computeMonthAndDay(hijriYear, (int)remainingDays);
-                }
-                remainingDays -= yearDays;
-            }
+        // Adjust year: find the year where the remaining days fit
+        // First try the estimated year, then adjust up or down if needed
+        long dayOfYear = daysSinceEpoch - getDaysBeforeHijriYear(hijriYear - 1);
+        while (dayOfYear < 0) {
+            hijriYear--;
+            dayOfYear = daysSinceEpoch - getDaysBeforeHijriYear(hijriYear - 1);
+        }
+        while (dayOfYear >= getHijriYearLength(hijriYear)) {
+            dayOfYear -= getHijriYearLength(hijriYear);
+            hijriYear++;
         }
 
-        // Fallback: use simplified calculation
-        hijriYear = (int)(adjustedJD / 354.36667) + 1;
-        int dayOfYear = (int)(adjustedDaysInYear(hijriYear, adjustedJD));
-        return computeMonthAndDay(hijriYear, dayOfYear);
+        return computeMonthAndDay(hijriYear, (int) dayOfYear);
     }
 
-    private static int getHijriYearDays(int yearInCycle) {
-        // 30-year cycle: 11 leap years (years 2,5,7,10,13,16,18,21,24,26,29)
-        int[] leapYears = {2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29};
-        for (int ly : leapYears) {
-            if (yearInCycle == ly - 1) return 355;
+    /**
+     * Total days from 1 Muharram 1 AH up to the start of the given Hijri year.
+     */
+    private static long getDaysBeforeHijriYear(int year) {
+        if (year <= 0) return 0;
+        int fullCycles = year / 30;
+        int remainingYears = year % 30;
+        // Each 30-year cycle has 11 leap years of 355 days and 19 normal years of 354 days
+        long cycleDays = fullCycles * (11L * 355 + 19L * 354);
+        // Add days for remaining years in the current cycle
+        int[] leapYearsInCycle = {2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29};
+        for (int y = 1; y <= remainingYears; y++) {
+            boolean isLeap = false;
+            for (int ly : leapYearsInCycle) {
+                if (y == ly) { isLeap = true; break; }
+            }
+            cycleDays += isLeap ? 355 : 354;
+        }
+        return cycleDays;
+    }
+
+    /**
+     * Get the length of a specific Hijri year in days.
+     */
+    private static int getHijriYearLength(int year) {
+        int pos = ((year - 1) % 30 + 30) % 30; // position in 30-year cycle (0-based)
+        int[] leapYearsInCycle = {2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29};
+        for (int ly : leapYearsInCycle) {
+            if (pos + 1 == ly) return 355;
         }
         return 354;
-    }
-
-    private static int adjustedDaysInYear(int hijriYear, long totalDays) {
-        long accumulated = 0;
-        for (int y = 1; y < hijriYear; y++) {
-            int cycle = (y - 1) / 30;
-            int pos = (y - 1) % 30;
-            accumulated += getHijriYearDays(pos);
-        }
-        return (int)(totalDays - accumulated);
     }
 
     /**
@@ -129,9 +136,9 @@ public class HijriDateCalculator {
 
     private static boolean isHijriLeapYear(int year) {
         int[] leapYears = {2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29};
-        int pos = ((year - 1) % 30);
+        int pos = ((year - 1) % 30 + 30) % 30;
         for (int ly : leapYears) {
-            if (pos == ly - 1) return true;
+            if (pos + 1 == ly) return true;
         }
         return false;
     }
