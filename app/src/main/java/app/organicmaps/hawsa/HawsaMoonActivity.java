@@ -3,6 +3,7 @@ package app.organicmaps.hawsa;
 import android.content.pm.ActivityInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -43,7 +44,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         Calendar now = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
 
         // Phase name
-        TextView tvPhase = findViewById(R.id.tv_moon_phase);
+        TextView tvPhase = findViewById(R.id.tv_moon_phase_name);
         if (tvPhase != null) {
             tvPhase.setText(MoonCalculator.getPhaseNameAr(now));
         }
@@ -52,36 +53,34 @@ public class HawsaMoonActivity extends AppCompatActivity {
         TextView tvIllumination = findViewById(R.id.tv_moon_illumination);
         if (tvIllumination != null) {
             double illum = MoonCalculator.getIllumination(now);
-            tvIllumination.setText(String.format(Locale.US, "%.1f%%", illum));
+            tvIllumination.setText(String.format(Locale.US, "الإضاءة: %.1f%%", illum));
         }
 
         // Moon age
         TextView tvAge = findViewById(R.id.tv_moon_age);
         if (tvAge != null) {
             double age = MoonCalculator.getMoonAge(now);
-            tvAge.setText(String.format(Locale.US, "%.1f يوم", age));
+            tvAge.setText(String.format(Locale.US, "عمر القمر: %.1f يوم", age));
         }
 
         // Rise / Set times
         String[] riseSet = MoonCalculator.getRiseSetTimes(now);
         TextView tvRise = findViewById(R.id.tv_moon_rise);
-        if (tvRise != null) tvRise.setText(riseSet[0]);
+        if (tvRise != null) {
+            tvRise.setText(String.format(Locale.US, "الطلوع: %s", riseSet[0]));
+        }
         TextView tvSet = findViewById(R.id.tv_moon_set);
-        if (tvSet != null) tvSet.setText(riseSet[1]);
+        if (tvSet != null) {
+            tvSet.setText(String.format(Locale.US, "الغروب: %s", riseSet[1]));
+        }
 
         // ===== Hijri Date Section =====
         LinearLayout hijriContainer = findViewById(R.id.hijri_date_container);
         if (hijriContainer != null) {
             buildHijriSection(hijriContainer, now);
-        } else {
-            // Fallback: try to add to existing layout
-            LinearLayout rootContainer = findViewById(R.id.moon_info_container);
-            if (rootContainer != null) {
-                buildHijriSection(rootContainer, now);
-            }
         }
 
-        // Designer credit
+        // Designer credit (if present in layout)
         TextView tvCredit = findViewById(R.id.tv_designer_credit);
         if (tvCredit != null) {
             tvCredit.setText("تم تصميم هذا التطبيق من قبل أصيل صادق");
@@ -89,42 +88,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
     }
 
     private void buildHijriSection(LinearLayout container, Calendar date) {
-        // Section separator
-        View separator = new View(this);
-        separator.setBackgroundColor(0x40D4AF37); // Gold separator
-        LinearLayout.LayoutParams sepParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, 2
-        );
-        sepParams.setMargins(0, 24, 0, 24);
-        separator.setLayoutParams(sepParams);
-        container.addView(separator);
-
-        // Section title: "التاريخ الهجري"
-        TextView tvHijriTitle = new TextView(this);
-        tvHijriTitle.setText("التاريخ الهجري");
-        tvHijriTitle.setTextSize(20);
-        tvHijriTitle.setTextColor(0xFFD4AF37); // Gold
-        tvHijriTitle.getPaint().setFakeBoldText(true);
-        tvHijriTitle.setTextDirection(View.TEXT_DIRECTION_RTL);
-        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        titleParams.setMargins(16, 0, 16, 8);
-        tvHijriTitle.setLayoutParams(titleParams);
-        container.addView(tvHijriTitle);
-
-        // Hijri date card
-        LinearLayout hijriCard = new LinearLayout(this);
-        hijriCard.setOrientation(LinearLayout.VERTICAL);
-        hijriCard.setPadding(24, 20, 24, 20);
-        hijriCard.setBackgroundColor(0xFF142e50); // Card background
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        cardParams.setMargins(16, 0, 16, 0);
-        hijriCard.setLayoutParams(cardParams);
+        container.removeAllViews();
 
         // Get Hijri date
         HijriDateCalculator.HijriDate hijriDate = MoonCalculator.getHijriDate(date);
@@ -141,7 +105,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
             LinearLayout.LayoutParams.WRAP_CONTENT
         );
         tvHijriDate.setLayoutParams(dateParams);
-        hijriCard.addView(tvHijriDate);
+        container.addView(tvHijriDate);
 
         // Hijri month name (subtext)
         TextView tvHijriMonth = new TextView(this);
@@ -155,9 +119,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         );
         monthParams.setMargins(0, 8, 0, 0);
         tvHijriMonth.setLayoutParams(monthParams);
-        hijriCard.addView(tvHijriMonth);
-
-        container.addView(hijriCard);
+        container.addView(tvHijriMonth);
 
         // Lunar month progress indicator
         double moonAge = MoonCalculator.getMoonAge(date);
@@ -172,7 +134,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        progressParams.setMargins(20, 10, 20, 0);
+        progressParams.setMargins(0, 10, 0, 0);
         tvLunarProgress.setLayoutParams(progressParams);
         container.addView(tvLunarProgress);
     }
