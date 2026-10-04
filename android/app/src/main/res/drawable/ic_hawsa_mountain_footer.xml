@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Minimalist mountain peak icon -->
+    <path
+        android:pathData="M12,3 L20,19 L16,19 L15.5,18 L12,10 L8.5,18 L8,19 L4,19 Z"
+        android:fillColor="#D4AF37" />
+    <path
+        android:pathData="M14,8 L18,15 L16.5,15 L14,11 L15,9 Z"
+        android:fillColor="#C49B2F" />
+</vector>
