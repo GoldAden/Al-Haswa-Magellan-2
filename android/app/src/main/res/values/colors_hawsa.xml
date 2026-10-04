@@ -1,30 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="hawsa_status_bar_color">#0c2340</color>
-    <color name="hawsa_bg_dark">#0c2340</color>
+    <!-- Main backgrounds -->
+    <color name="hawsa_bg_dark_navy">#0D1B2A</color>
+    <color name="hawsa_bg_card">#142e50</color>
     <color name="hawsa_bg_main">#0c2340</color>
-    <color name="hawsa_card_bg">#0f2847</color>
-    <color name="hawsa_text_primary">#E0E1DD</color>
-    <color name="hawsa_text_secondary">#778DA9</color>
-    <color name="hawsa_accent">#3a5a80</color>
+
+    <!-- Gold accent system -->
     <color name="hawsa_gold">#D4AF37</color>
-    <color name="hawsa_gold_dark">#C49B2F</color>
-    <color name="hawsa_white">#FFFFFF</color>
-    <color name="hawsa_card_bronze">#8B6914</color>
-    <color name="hawsa_card_blue">#1B3A5C</color>
-    <color name="hawsa_card_purple">#2D1B4E</color>
-    <color name="hawsa_card_teal">#1A5C4E</color>
-    <color name="hawsa_muted_gray">#99AABB</color>
-    <color name="hawsa_semi_white">#CCFFFFFF</color>
-    <color name="hawsa_accent_orange">#E8960C</color>
-    <color name="hawsa_gold_accent">#D4AF37</color>
-    <color name="hawsa_gold_border">#D4AF37</color>
-    <color name="hawsa_icon_circle_blue">#1E4A78</color>
-    <color name="hawsa_icon_circle_teal">#1B6859</color>
-    <color name="hawsa_icon_circle_purple">#3A1B5A</color>
-    <color name="hawsa_icon_circle_gold">#6D5D26</color>
-    <color name="hawsa_subtitle_map">#8BA8CC</color>
-    <color name="hawsa_subtitle_tides">#8BC8B8</color>
-    <color name="hawsa_subtitle_moon">#B8A0D8</color>
-    <color name="hawsa_subtitle_compass">#D4C48A</color>
+    <color name="hawsa_gold_bright">#FFD700</color>
+    <color name="hawsa_gold_dim">#8B7227</color>
+    <color name="hawsa_gold_glow">#40D4AF37</color>
+
+    <!-- Text colors -->
+    <color name="hawsa_text_light">#E0E1DD</color>
+    <color name="hawsa_text_muted">#778DA9</color>
+    <color name="hawsa_text_dark">#415A77</color>
+
+    <!-- Status bar -->
+    <color name="hawsa_status_bar_color">#0D1B2A</color>
+
+    <!-- Compass specific -->
+    <color name="hawsa_compass_north">#E53935</color>
+    <color name="hawsa_compass_qibla">#D4AF37</color>
+    <color name="hawsa_compass_silver">#C0C0C0</color>
+    <color name="hawsa_compass_ring">#1B263B</color>
+    <color name="hawsa_compass_tick">#778DA9</color>
+    <color name="hawsa_compass_tick_major">#E0E1DD</color>
+
+    <!-- Prayer time colors -->
+    <color name="hawsa_prayer_fajr">#4FC3F7</color>
+    <color name="hawsa_prayer_sunrise">#FFB74D</color>
+    <color name="hawsa_prayer_dhuhr">#D4AF37</color>
+    <color name="hawsa_prayer_asr">#FF8A65</color>
+    <color name="hawsa_prayer_maghrib">#FF5722</color>
+    <color name="hawsa_prayer_isha">#7C4DFF</color>
+    <color name="hawsa_prayer_next_bg">#20D4AF37</color>
+
+    <!-- Tide chart -->
+    <color name="hawsa_tide_chart_bg">#0D1B2A</color>
+    <color name="hawsa_tide_gold_line">#D4AF37</color>
+    <color name="hawsa_tide_current_indicator">#D4AF37</color>
+    <color name="hawsa_tide_label_high">#D4AF37</color>
+    <color name="hawsa_tide_label_low">#778DA9</color>
+
+    <!-- Day button colors -->
+    <color name="hawsa_day_button_normal">#1B263B</color>
+    <color name="hawsa_day_button_selected">#D4AF37</color>
+    <color name="hawsa_day_button_text_normal">#778DA9</color>
+    <color name="hawsa_day_button_text_selected">#0D1B2A</color>
+
+    <!-- Hijri date -->
+    <color name="hawsa_hijri_section_title">#D4AF37</color>
+    <color name="hawsa_hijri_card_bg">#142e50</color>
+    <color name="hawsa_hijri_separator">#40D4AF37</color>
 </resources>
