@@ -1,35 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- الواجهة الرئيسية -->
-    <string name="hawsa_app_title">الحسوة ماجلان</string>
-    <string name="hawsa_app_subtitle">دليلك للملاحة واستكشاف البر والبحر</string>
-    <string name="hawsa_designer_credit">تم تصميم هذا التطبيق من قبل أصيل صادق</string>
-    <string name="hawsa_header_desc">منظر خليج الحسوة</string>
-    <string name="hawsa_logo_desc">شعار الحسوة ماجلان</string>
-
-    <!-- بطاقات الواجهة -->
-    <string name="hawsa_map_card">الخريطة</string>
-    <string name="hawsa_map_card_desc">استكشاف مواقعك بكل سهولة</string>
-    <string name="hawsa_tides_card">المد والجزر</string>
-    <string name="hawsa_tides_card_desc">رسم بياني وتوقعات أسبوعية</string>
-    <string name="hawsa_moon_card">معلومات القمر</string>
-    <string name="hawsa_moon_card_desc">أطوار القمر وتوقعات أسبوعية</string>
-    <string name="hawsa_compass_card">البوصلة والقبلة</string>
-    <string name="hawsa_compass_card_desc">بوصلة حقيقية واتجاه القبلة وأوقات الأذان</string>
-
-    <!-- شريط المعلومات -->
-    <string name="hawsa_wifi_connected">متصل بالشبكة</string>
-    <string name="hawsa_wifi_disconnected">غير متصل</string>
-
-    <!-- صفحة المد والجزر -->
+    <!-- Hawsa Tides -->
     <string name="hawsa_tides_title">المد والجزر</string>
-    <string name="hawsa_tides_info">رسم بياني متحرك لمواعيد المد والجزر</string>
+    <string name="hawsa_tides_weekly_summary">ملخص الأسبوع</string>
+    <string name="hawsa_tides_high_tide">مد</string>
+    <string name="hawsa_tides_low_tide">جزر</string>
+    <string name="hawsa_tides_high_to_low">آخر المد وبداية الجزر</string>
+    <string name="hawsa_tides_low_to_high">آخر الجزر وبداية المد</string>
+    <string name="hawsa_tides_water_height">نسبة ارتفاع الماء</string>
+    <string name="hawsa_tides_meters">متر</string>
+    <string name="hawsa_tides_time">الوقت</string>
+    <string name="hawsa_tides_height">الارتفاع</string>
 
-    <!-- صفحة القمر -->
-    <string name="hawsa_moon_title">معلومات القمر</string>
-    <string name="hawsa_moon_info">أطوار القمر وتوقعات أسبوعية</string>
+    <!-- Hawsa Compass -->
+    <string name="hawsa_compass_title">البوصلة والقبلة</string>
+    <string name="hawsa_qibla_direction">اتجاه القبلة</string>
+    <string name="hawsa_qibla_southwest">جنوب غرب</string>
+    <string name="hawsa_qibla_degrees">%.0f° من الشمال</string>
+    <string name="hawsa_north">شمال</string>
+    <string name="hawsa_south">جنوب</string>
+    <string name="hawsa_east">شرق</string>
+    <string name="hawsa_west">غرب</string>
 
-    <!-- صفحة البوصلة -->
-    <string name="hawsa_compass_title">البوصلة واتجاه القبلة</string>
-    <string name="hawsa_qibla_info">اتجاه القبلة من الحسوة: 248° جنوب غرب</string>
+    <!-- Prayer Times -->
+    <string name="hawsa_prayer_times">أوقات الصلاة</string>
+    <string name="hawsa_prayer_fajr">الفجر</string>
+    <string name="hawsa_prayer_sunrise">الشروق</string>
+    <string name="hawsa_prayer_dhuhr">الظهر</string>
+    <string name="hawsa_prayer_asr">العصر</string>
+    <string name="hawsa_prayer_maghrib">المغرب</string>
+    <string name="hawsa_prayer_isha">العشاء</string>
+    <string name="hawsa_prayer_next">الصلاة القادمة</string>
+    <string name="hawsa_prayer_am">ص</string>
+    <string name="hawsa_prayer_pm">م</string>
+
+    <!-- Hawsa Moon -->
+    <string name="hawsa_moon_title">القمر</string>
+    <string name="hawsa_moon_phase_label">طور القمر</string>
+    <string name="hawsa_moon_illumination">الإضاءة</string>
+    <string name="hawsa_moon_age">عمر القمر</string>
+    <string name="hawsa_moon_rise">شروق القمر</string>
+    <string name="hawsa_moon_set">غروب القمر</string>
+    <string name="hawsa_moon_days">يوم</string>
+
+    <!-- Hijri Date -->
+    <string name="hawsa_hijri_date">التاريخ الهجري</string>
+    <string name="hawsa_hijri_month">شهر</string>
+    <string name="hawsa_hijri_year">العام</string>
+    <string name="hawsa_hijri_ah">هـ</string>
+    <string name="hawsa_lunar_month_progress">تقدم الشهر القمري</string>
+
+    <!-- Common -->
+    <string name="hawsa_designer_credit">تم تصميم هذا التطبيق من قبل أصيل صادق</string>
 </resources>
