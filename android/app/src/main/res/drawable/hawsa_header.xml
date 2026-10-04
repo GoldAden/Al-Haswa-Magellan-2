@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Simulated bay/sky landscape gradient for header placeholder -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="270"
+                android:startColor="#1A3A5C"
+                android:centerColor="#1E4D6E"
+                android:endColor="#0A1628" />
+            <corners android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp" />
+        </shape>
+    </item>
+    <!-- Subtle horizon line -->
+    <item android:top="130dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="0"
+                android:startColor="#00000000"
+                android:centerColor="#1A5C3A"
+                android:endColor="#00000000" />
+            <size android:height="2dp" />
+        </shape>
+    </item>
+</layer-list>
