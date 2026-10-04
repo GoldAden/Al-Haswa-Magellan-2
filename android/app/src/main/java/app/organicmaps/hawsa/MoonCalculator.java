@@ -16,7 +16,7 @@ public class MoonCalculator {
 
     // Known new moon: Jan 6 2000 18:14 UTC
     private static final long REF_NEW_MOON = 947182440000L;
-    private static final double SYNODIC_MONTH = 29.53058867;
+    static final double SYNODIC_MONTH = 29.53058867;
 
     /**
      * Get lunar age (0 to ~29.53 days)
