@@ -1,6 +1,7 @@
 package app.organicmaps.hawsa;
 
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -124,6 +125,22 @@ public class MoonCalculator {
         return phase * 29.53058867;
     }
 
+    /**
+     * Format a Calendar time as Arabic AM/PM string.
+     * Used by HawsaTidesActivity for tide event formatting.
+     *
+     * @param cal Calendar with time set
+     * @return Formatted time string like "5:30 ص" or "7:15 م"
+     */
+    public static String formatTimeAmPm(Calendar cal) {
+        int h = cal.get(Calendar.HOUR_OF_DAY);
+        int m = cal.get(Calendar.MINUTE);
+        String ampm = h < 12 ? "ص" : "م";
+        int h12 = h % 12;
+        if (h12 == 0) h12 = 12;
+        return String.format(Locale.US, "%d:%02d %s", h12, m, ampm);
+    }
+
     private static double toJulianDay(int year, int month, double day) {
         if (month <= 2) { year--; month += 12; }
         long A = year / 100;
@@ -144,6 +161,6 @@ public class MoonCalculator {
         int h12 = h % 12;
         if (h12 == 0) h12 = 12;
 
-        return String.format(java.util.Locale.US, "%d:%02d %s", h12, m, ampm);
+        return String.format(Locale.US, "%d:%02d %s", h12, m, ampm);
     }
 }
