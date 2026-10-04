@@ -137,7 +137,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         tvDay.setText(dayName);
         tvDay.setTextSize(16);
         tvDay.setTextColor(0xFFE0E1DD);
-        tvDay.setFakeBoldText(true);
+        tvDay.getPaint().setFakeBoldText(true);
         leftInfo.addView(tvDay);
 
         TextView tvDate = new TextView(this);
