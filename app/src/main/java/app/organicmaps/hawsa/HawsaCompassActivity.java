@@ -62,6 +62,10 @@ public class HawsaCompassActivity extends AppCompatActivity {
         if (tvTitle != null) tvTitle.setText(R.string.hawsa_compass_title);
 
         compassView = findViewById(R.id.compass_view);
+        // Set Qibla bearing dynamically on the compass view
+        if (compassView != null) {
+            compassView.setQiblaBearing(QIBLA_BEARING);
+        }
 
         tvQiblaDirection = findViewById(R.id.tv_qibla_direction);
         tvQiblaDegrees = findViewById(R.id.tv_qibla_degrees);
