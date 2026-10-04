@@ -74,7 +74,7 @@ public class MoonPhaseView extends View {
 
     public void setPhase(double illumination, double age) {
         this.illumination = illumination;
-        this.isWaxing = age < MoonCalculator.SYNODIC_MONTH / 2.0;
+        this.isWaxing = age < 29.53058867 / 2.0;
         invalidate();
     }
 
