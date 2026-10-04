@@ -22,9 +22,6 @@ public class PrayerTimesCalculator {
     private static final double FAJR_ANGLE = 18.0;
     private static final double ISHA_ANGLE = 17.0;
 
-    // Asr factor: 1.0 for standard (Shafi'i)
-    private static final double ASR_FACTOR = 1.0;
-
     // Sun parameters for a given day
     private static class SunPosition {
         double declination;
@@ -68,9 +65,6 @@ public class PrayerTimesCalculator {
         if (noon >= 24) noon -= 24;
         times.dhuhr = noon;
 
-        // Sun altitude at solar noon
-        double noonAlt = 90.0 - Math.abs(LATITUDE - sun.declination);
-
         // Sunrise / Sunset (sun center at 0.833° below horizon for refraction)
         double cosRiseSet = (Math.sin(Math.toRadians(-0.833))
                 - Math.sin(Math.toRadians(LATITUDE)) * Math.sin(Math.toRadians(sun.declination)))
@@ -89,19 +83,19 @@ public class PrayerTimesCalculator {
         double fajrAngle = Math.toDegrees(Math.acos(cosFajr));
         times.fajr = noon - fajrAngle / 15.0;
 
-        // Asr (standard: shadow = object + shadow-at-noon)
-        double asrAlt = Math.toDegrees(Math.atan(1.0 / (1.0 + Math.tan(Math.toRadians(Math.abs(LATITUDE - sun.declination))))));
-        if (LATITUDE > sun.declination) {
-            // Afternoon, sun descending
-            double cosAsr = (Math.sin(Math.toRadians(asrAlt))
-                    - Math.sin(Math.toRadians(LATITUDE)) * Math.sin(Math.toRadians(sun.declination)))
-                    / (Math.cos(Math.toRadians(LATITUDE)) * Math.cos(Math.toRadians(sun.declination)));
-            cosAsr = Math.max(-1, Math.min(1, cosAsr));
-            double asrAngle = Math.toDegrees(Math.acos(cosAsr));
-            times.asr = noon + asrAngle / 15.0;
-        } else {
-            times.asr = noon + riseSetAngle * 0.4;
-        }
+        // Asr (standard Shafi'i: shadow = object + shadow-at-noon)
+        // The standard formula works regardless of hemisphere or season:
+        //   asrAlt = atan(1 / (1 + tan(|lat - decl|)))
+        //   then solve for hour angle from altitude
+        double asrAlt = Math.toDegrees(Math.atan(
+            1.0 / (1.0 + Math.tan(Math.toRadians(Math.abs(LATITUDE - sun.declination))))
+        ));
+        double cosAsr = (Math.sin(Math.toRadians(asrAlt))
+                - Math.sin(Math.toRadians(LATITUDE)) * Math.sin(Math.toRadians(sun.declination)))
+                / (Math.cos(Math.toRadians(LATITUDE)) * Math.cos(Math.toRadians(sun.declination)));
+        cosAsr = Math.max(-1, Math.min(1, cosAsr));
+        double asrAngle = Math.toDegrees(Math.acos(cosAsr));
+        times.asr = noon + asrAngle / 15.0;
 
         // Isha (sun at -17°)
         double cosIsha = (Math.sin(Math.toRadians(-ISHA_ANGLE))
