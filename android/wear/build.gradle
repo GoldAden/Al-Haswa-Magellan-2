@@ -13,7 +13,8 @@ android {
         applicationId rootProject.ext.appId
         // Keep the Wear artifact version code unique from the phone app while preserving
         // the same base Organic Maps version code for Google Play multi-form-factor uploads.
-        versionCode rootProject.ext.versionCode * 10 + 1
+        // Use Math.min to prevent integer overflow when multiplied by 10.
+        versionCode Math.min((int)(rootProject.ext.versionCode * 10L + 1), Integer.MAX_VALUE)
         versionName rootProject.ext.versionName
         minSdk 26
     }
