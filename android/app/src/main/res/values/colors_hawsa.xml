@@ -19,6 +19,18 @@
     <!-- Status bar -->
     <color name="hawsa_status_bar_color">#0D1B2A</color>
 
+    <!-- Icon circle colors for main cards -->
+    <color name="hawsa_icon_circle_blue">#1E3A5F</color>
+    <color name="hawsa_icon_circle_teal">#1B4D4D</color>
+    <color name="hawsa_icon_circle_purple">#3B2470</color>
+    <color name="hawsa_icon_circle_gold">#5C4A1E</color>
+
+    <!-- Subtitle accent colors per card -->
+    <color name="hawsa_subtitle_map">#64B5F6</color>
+    <color name="hawsa_subtitle_tides">#4DD0E1</color>
+    <color name="hawsa_subtitle_moon">#CE93D8</color>
+    <color name="hawsa_subtitle_compass">#FFD54F</color>
+
     <!-- Compass specific -->
     <color name="hawsa_compass_north">#E53935</color>
     <color name="hawsa_compass_qibla">#D4AF37</color>
