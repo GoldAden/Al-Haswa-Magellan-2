@@ -1,0 +1,126 @@
+package app.organicmaps.hawsa;
+
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.ActivityInfo;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.BatteryManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
+
+import app.organicmaps.MwmActivity;
+import app.organicmaps.R;
+
+public class HawsaMainActivity extends AppCompatActivity {
+
+    private static final double DEFAULT_LAT = 19.4431;
+    private static final double DEFAULT_LON = 40.5167;
+    private static final int DEFAULT_ZOOM = 6;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Window setup - dark status bar matching main background
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(true);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.hawsa_status_bar_color));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                View decor = getWindow().getDecorView();
+                int flags = decor.getSystemUiVisibility();
+                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                decor.setSystemUiVisibility(flags);
+            }
+        }
+
+        // Force RTL layout direction for Arabic
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        }
+
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        setContentView(R.layout.activity_hawsa_main);
+
+        // Update status info bar
+        updateBatteryLevel();
+        updateWifiStatus();
+
+        // Card click listeners
+        findViewById(R.id.card_map).setOnClickListener(v -> openMap());
+
+        findViewById(R.id.card_tides).setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(this, HawsaTidesActivity.class));
+            } catch (Exception e) { /* TODO */ }
+        });
+
+        findViewById(R.id.card_moon).setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(this, HawsaMoonActivity.class));
+            } catch (Exception e) { /* TODO */ }
+        });
+
+        findViewById(R.id.card_compass).setOnClickListener(v -> {
+            try {
+                startActivity(new Intent(this, HawsaCompassActivity.class));
+            } catch (Exception e) { /* TODO */ }
+        });
+    }
+
+    private void updateBatteryLevel() {
+        try {
+            IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+            Intent batteryStatus = registerReceiver(null, ifilter);
+            if (batteryStatus != null) {
+                int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                int batteryPct = (int)(level * 100 / (float)scale);
+                TextView tvBattery = findViewById(R.id.tv_battery_level);
+                if (tvBattery != null) {
+                    tvBattery.setText(batteryPct + "%");
+                }
+            }
+        } catch (Exception e) {
+            TextView tvBattery = findViewById(R.id.tv_battery_level);
+            if (tvBattery != null) tvBattery.setText("--%");
+        }
+    }
+
+    private void updateWifiStatus() {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (cm != null) {
+                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+                TextView tvWifi = findViewById(R.id.tv_wifi_status);
+                if (tvWifi != null) {
+                    tvWifi.setText(isConnected ? getString(R.string.hawsa_wifi_connected) : getString(R.string.hawsa_wifi_disconnected));
+                }
+            }
+        } catch (Exception e) {
+            TextView tvWifi = findViewById(R.id.tv_wifi_status);
+            if (tvWifi != null) tvWifi.setText("--");
+        }
+    }
+
+    private void openMap() {
+        Intent intent = new Intent(this, MwmActivity.class);
+        intent.putExtra(MwmActivity.EXTRA_HAWSA_LAT, DEFAULT_LAT);
+        intent.putExtra(MwmActivity.EXTRA_HAWSA_LON, DEFAULT_LON);
+        intent.putExtra(MwmActivity.EXTRA_HAWSA_ZOOM, DEFAULT_ZOOM);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        startActivity(intent);
+    }
+}
