@@ -164,7 +164,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
         tvNameAr.setText(PRAYER_NAMES_AR[index]);
         tvNameAr.setTextSize(18);
         tvNameAr.setTextColor(isNext ? 0xFF4FC3F7 : 0xFFE0E1DD);
-        tvNameAr.setFakeBoldText(isNext);
+        tvNameAr.getPaint().setFakeBoldText(isNext);
         tvNameAr.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         row.addView(tvNameAr);
 
@@ -180,7 +180,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
         tvTime.setText(timeStr);
         tvTime.setTextSize(18);
         tvTime.setTextColor(isNext ? 0xFF4FC3F7 : 0xFFE0E1DD);
-        tvTime.setFakeBoldText(true);
+        tvTime.getPaint().setFakeBoldText(true);
         LinearLayout.LayoutParams timeParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
