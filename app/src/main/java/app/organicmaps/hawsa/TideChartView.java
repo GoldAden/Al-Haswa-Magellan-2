@@ -263,8 +263,8 @@ public class TideChartView extends View {
                 outlinePaint.setAlpha(markerAlpha);
                 canvas.drawCircle(x, y, 5f, outlinePaint);
 
-                // Time label (above the point) - THIS IS THE KEY CHANGE: show time, not height
-                String timeLabel = formatEventTime(evtCal);
+                // Time label (above the point) — use Arabic AM/PM via MoonCalculator.formatTimeAmPm
+                String timeLabel = MoonCalculator.formatTimeAmPm(evtCal);
                 Paint timePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 timePaint.setTextSize(13f);
                 timePaint.setColor(event.isHigh ? COLOR_HIGH : COLOR_LOW);
@@ -297,22 +297,15 @@ public class TideChartView extends View {
             dotPaint.setColor(COLOR_GOLD);
             canvas.drawCircle(cx, cy, 6f, dotPaint);
 
-            // Current time label at top
-            String timeLabel = String.format(Locale.US, "%d:%02d",
-                currentHour > 12 ? currentHour - 12 : (currentHour == 0 ? 12 : currentHour),
-                currentMinute) + (currentHour >= 12 ? "PM" : "AM");
+            // Current time label at top — use Arabic AM/PM
+            Calendar now = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
+            now.set(Calendar.HOUR_OF_DAY, currentHour);
+            now.set(Calendar.MINUTE, currentMinute);
+            String currentTimeLabel = MoonCalculator.formatTimeAmPm(now);
             Paint timeLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             timeLabelPaint.setTextSize(14f);
             timeLabelPaint.setColor(COLOR_GOLD);
-            canvas.drawText(timeLabel, cx - 20, padT - 6, timeLabelPaint);
+            canvas.drawText(currentTimeLabel, cx - 20, padT - 6, timeLabelPaint);
         }
-    }
-
-    private String formatEventTime(Calendar cal) {
-        int h = cal.get(Calendar.HOUR);
-        if (h == 0) h = 12;
-        int m = cal.get(Calendar.MINUTE);
-        String ap = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
-        return String.format(Locale.US, "%d:%02d%s", h, m, ap);
     }
 }
