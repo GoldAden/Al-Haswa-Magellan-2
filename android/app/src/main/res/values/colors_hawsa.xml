@@ -2,7 +2,7 @@
 <resources>
     <color name="hawsa_status_bar_color">#0D1B2A</color>
     <color name="hawsa_bg_dark">#0D1B2A</color>
-    <color name="hawsa_bg_main">#0F1723</color>
+    <color name="hawsa_bg_main">#0D1B2A</color>
     <color name="hawsa_card_bg">#101D30</color>
     <color name="hawsa_text_primary">#E0E1DD</color>
     <color name="hawsa_text_secondary">#778DA9</color>
@@ -17,4 +17,14 @@
     <color name="hawsa_muted_gray">#99AABB</color>
     <color name="hawsa_semi_white">#CCFFFFFF</color>
     <color name="hawsa_accent_orange">#E8960C</color>
+    <color name="hawsa_gold_accent">#D4AF37</color>
+    <color name="hawsa_gold_border">#D4AF37</color>
+    <color name="hawsa_icon_circle_blue">#1E4A78</color>
+    <color name="hawsa_icon_circle_teal">#1B6859</color>
+    <color name="hawsa_icon_circle_purple">#3A1B5A</color>
+    <color name="hawsa_icon_circle_gold">#6D5D26</color>
+    <color name="hawsa_subtitle_map">#8BA8CC</color>
+    <color name="hawsa_subtitle_tides">#8BC8B8</color>
+    <color name="hawsa_subtitle_moon">#B8A0D8</color>
+    <color name="hawsa_subtitle_compass">#D4C48A</color>
 </resources>
