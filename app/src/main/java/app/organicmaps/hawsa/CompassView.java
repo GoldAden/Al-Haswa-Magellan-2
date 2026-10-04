@@ -15,8 +15,6 @@ import android.hardware.SensorManager;
 import android.util.AttributeSet;
 import android.view.View;
 
-import java.util.Locale;
-
 /**
  * Modern compass view with rotating dial
  * North needle: Red
@@ -25,7 +23,8 @@ import java.util.Locale;
  */
 public class CompassView extends View implements SensorEventListener {
 
-    private static final double QIBLA_BEARING = 248.0;
+    // Mutable Qibla bearing — can be set dynamically
+    private double qiblaBearing = 248.0;
 
     // Dark navy + gold theme
     private static final int COLOR_BG = 0xFF0D1B2A;
@@ -132,6 +131,21 @@ public class CompassView extends View implements SensorEventListener {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         }
+    }
+
+    /**
+     * Set the Qibla bearing in degrees from North (clockwise).
+     */
+    public void setQiblaBearing(double bearing) {
+        this.qiblaBearing = bearing;
+        invalidate();
+    }
+
+    /**
+     * Get the current Qibla bearing.
+     */
+    public double getQiblaBearing() {
+        return this.qiblaBearing;
     }
 
     public void startSensors() {
@@ -308,7 +322,7 @@ public class CompassView extends View implements SensorEventListener {
         canvas.restore(); // End rotating section
 
         // ===== QIBLA INDICATOR (Gold, rotates opposite to compass) =====
-        float qiblaScreenAngle = (float) (QIBLA_BEARING - currentAzimuth);
+        float qiblaScreenAngle = (float) (qiblaBearing - currentAzimuth);
         float qiblaRad = (float) Math.toRadians(qiblaScreenAngle);
 
         // Qibla arrow (gold, prominent)
@@ -349,7 +363,7 @@ public class CompassView extends View implements SensorEventListener {
         canvas.drawText("🕋", qlX, qlY + 6, qiblaLabel);
 
         // Current heading at bottom (gold text)
-        String headingText = String.format(Locale.US, "%.0f°", currentAzimuth);
+        String headingText = String.format(java.util.Locale.US, "%.0f°", currentAzimuth);
         Paint headingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         headingPaint.setTextSize(30f);
         headingPaint.setColor(COLOR_QIBLA);
@@ -362,10 +376,6 @@ public class CompassView extends View implements SensorEventListener {
         fixedNorth.setTextSize(12f);
         fixedNorth.setColor(COLOR_NORTH);
         fixedNorth.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("شمال", cx, padTop(cx, cy, radius) - 6, fixedNorth);
-    }
-
-    private float padTop(float cx, float cy, float radius) {
-        return cy - radius - 4;
+        canvas.drawText("شمال", cx, cy - radius - 6, fixedNorth);
     }
 }
