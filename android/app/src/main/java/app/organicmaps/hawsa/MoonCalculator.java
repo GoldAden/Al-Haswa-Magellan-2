@@ -105,7 +105,7 @@ public class MoonCalculator {
         int hour = cal.get(Calendar.HOUR);
         if (hour == 0) hour = 12;
         int minute = cal.get(Calendar.MINUTE);
-        String ampm = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
+        String ampm = cal.get(Calendar.AM_PM) == Calendar.AM ? "ص" : "م";
         return String.format("%d:%02d %s", hour, minute, ampm);
     }
 
