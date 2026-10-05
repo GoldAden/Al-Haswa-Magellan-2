@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Hawsa Main Screen -->
-    <string name="hawsa_wifi_connected">متصل بالشبكة</string>
-    <string name="hawsa_wifi_disconnected">غير متصل بالشبكة</string>
     <string name="hawsa_app_title">الحسوة ماجلان</string>
     <string name="hawsa_app_subtitle">دليلك البحري الشامل</string>
     <string name="hawsa_logo_desc">شعار الحسوة ماجلان</string>
