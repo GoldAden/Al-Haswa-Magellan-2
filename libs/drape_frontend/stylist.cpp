@@ -10,6 +10,8 @@
 
 #include "drape/hatching_decl.hpp"
 
+#include <unordered_map>
+
 #include <algorithm>
 #include <limits>
 
@@ -117,6 +119,46 @@ void CaptionDescription::Init(FeatureType & f, int8_t deviceLang, int zoomLevel,
   }
   m_mainText = out.GetPrimary();
   m_mainTextLang = localizeLang(out.primaryLang);
+
+  // Country name overrides: replace names on the world map
+  {
+    feature::TypesHolder const types(f);
+    if (ftypes::IsCountryChecker::Instance()(types))
+    {
+      static std::unordered_map<std::string, std::string> const kCountryNameOverrides = {
+        {"Israel", "فلسطين"},
+        {"إسرائيل", "فلسطين"},
+        {"Israël", "فلسطين"},
+        {"Israele", "فلسطين"},
+        {"Izrael", "فلسطين"},
+        {"Израиль", "فلسطين"},
+        {"Ізраїль", "فلسطين"},
+        {"Ізраіль", "فلسطين"},
+        {"Израел", "فلسطين"},
+        {"ישראל", "فلسطين"},
+        {"Ισραήλ", "فلسطين"},
+        {"이스라엘", "فلسطين"},
+        {"以色列", "فلسطين"},
+        {"イスラエル", "فلسطين"},
+        {"İsrail", "فلسطين"},
+        {"อิสราเอล", "فلسطين"},
+      };
+      static int8_t const kArabicCode = StringUtf8Multilang::GetLangIndex("ar");
+      auto const it = kCountryNameOverrides.find(m_mainText);
+      if (it != kCountryNameOverrides.end())
+      {
+        m_mainText = it->second;
+        m_mainTextLang = kArabicCode;
+      }
+      auto const itAux = kCountryNameOverrides.find(m_auxText);
+      if (itAux != kCountryNameOverrides.end())
+      {
+        m_auxText = itAux->second;
+        m_auxTextLang = kArabicCode;
+      }
+    }
+  }
+
   ASSERT(m_auxText.empty() || !m_mainText.empty(), ("auxText without mainText"));
 
   uint8_t constexpr kLongCaptionsMaxZoom = 4;
