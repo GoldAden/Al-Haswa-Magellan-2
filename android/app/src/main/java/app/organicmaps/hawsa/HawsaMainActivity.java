@@ -1,11 +1,7 @@
 package app.organicmaps.hawsa;
 
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -36,7 +32,7 @@ public class HawsaMainActivity extends AppCompatActivity {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.hawsa_status_bar_color));
+            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.hawsa_bg_main));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 View decor = getWindow().getDecorView();
                 int flags = decor.getSystemUiVisibility();
@@ -52,10 +48,6 @@ public class HawsaMainActivity extends AppCompatActivity {
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_hawsa_main);
-
-        // Update status info bar
-        updateBatteryLevel();
-        updateWifiStatus();
 
         // Card click listeners
         findViewById(R.id.card_map).setOnClickListener(v -> openMap());
@@ -77,42 +69,6 @@ public class HawsaMainActivity extends AppCompatActivity {
                 startActivity(new Intent(this, HawsaCompassActivity.class));
             } catch (Exception e) { /* TODO */ }
         });
-    }
-
-    private void updateBatteryLevel() {
-        try {
-            IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-            Intent batteryStatus = registerReceiver(null, ifilter);
-            if (batteryStatus != null) {
-                int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                int batteryPct = (int)(level * 100 / (float)scale);
-                TextView tvBattery = findViewById(R.id.tv_battery_level);
-                if (tvBattery != null) {
-                    tvBattery.setText(batteryPct + "%");
-                }
-            }
-        } catch (Exception e) {
-            TextView tvBattery = findViewById(R.id.tv_battery_level);
-            if (tvBattery != null) tvBattery.setText("--%");
-        }
-    }
-
-    private void updateWifiStatus() {
-        try {
-            ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-            if (cm != null) {
-                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-                TextView tvWifi = findViewById(R.id.tv_wifi_status);
-                if (tvWifi != null) {
-                    tvWifi.setText(isConnected ? getString(R.string.hawsa_wifi_connected) : getString(R.string.hawsa_wifi_disconnected));
-                }
-            }
-        } catch (Exception e) {
-            TextView tvWifi = findViewById(R.id.tv_wifi_status);
-            if (tvWifi != null) tvWifi.setText("--");
-        }
     }
 
     private void openMap() {
