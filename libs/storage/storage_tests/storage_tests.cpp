@@ -1313,7 +1313,7 @@ UNIT_TEST(StorageTest_GetTopmostNodesFor)
 
   storage.GetTopmostNodesFor("Jerusalem", path);
   TEST_EQUAL(path.size(), 2, (path));
-  TEST_EQUAL(path[0], "Israel Region", (path));
+  TEST_EQUAL(path[0], "Palestine Region", (path));
   TEST_EQUAL(path[1], "Palestine Region", (path));
 }
 

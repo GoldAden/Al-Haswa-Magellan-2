@@ -16,7 +16,7 @@ UNIT_TEST(CountryParentGetter_Smoke)
   TEST_EQUAL(getter("Russia_Arkhangelsk Oblast_Central"), "Russian Federation", ());
   TEST_EQUAL(getter("Crimea"), "", ());
 
-  TEST_EQUAL(getter("Israel"), "Israel Region", ());
+  TEST_EQUAL(getter("Israel"), "Palestine Region", ());
   TEST_EQUAL(getter("Palestine"), "Palestine Region", ());
   TEST_EQUAL(getter("Jerusalem"), "", ());
   TEST_EQUAL(getter("US_New York_New York"), "New York", ());

@@ -26,10 +26,10 @@ CountrySetT kSchengenArea = {"Austria", "Belgium",       "Czech Republic", "Denm
 std::string_view kIreland = "Ireland";
 std::string_view kNorthernIrelandMwm = "UK_Northern Ireland";
 
-// In fact, there is no _total_ border control on major roads between Israel and Palestine (UN boundary), except:
+// In fact, there is no _total_ border control on major roads within Palestine (UN boundary), except:
 // - Gaza, strict access/barrier restrictions should be mapped, no transit traffic.
 // - West bank wall (https://www.openstreetmap.org/relation/1410327), access/barrier restrictions should be mapped.
-CountrySetT kIsraelAndPalestine = {"Israel Region", "Palestine Region"};
+CountrySetT kPalestine = {"Palestine Region"};
 std::string_view kJerusalemMwm = "Jerusalem";
 
 bool IsInSet(CountrySetT const & theSet, std::string const & country)
@@ -109,7 +109,7 @@ bool MwmHierarchyHandler::HasCrossBorderPenalty(NumMwmId mwmId1, NumMwmId mwmId2
   if ((country1 == kIreland && mwm2 == kNorthernIrelandMwm) || (country2 == kIreland && mwm1 == kNorthernIrelandMwm))
     return false;
 
-  if (IsInSet(kIsraelAndPalestine, country1) && IsInSet(kIsraelAndPalestine, country2))
+  if (IsInSet(kPalestine, country1) && IsInSet(kPalestine, country2))
     return false;
 
   if (IsInSet(kEAEU, country1) && IsInSet(kEAEU, country2))
