@@ -58,9 +58,9 @@ public class HawsaTidesActivity extends AppCompatActivity {
         TextView tvTitle = findViewById(R.id.tv_tides_title);
         if (tvTitle != null) tvTitle.setText(R.string.hawsa_tides_title);
 
-        // Location subtitle
+        // Location subtitle - hidden
         TextView tvLocation = findViewById(R.id.tv_tides_location);
-        if (tvLocation != null) tvLocation.setText("الحسوة، البحر الأحمر");
+        if (tvLocation != null) tvLocation.setVisibility(View.GONE);
 
         // Tide chart
         tideChart = findViewById(R.id.tide_chart);
