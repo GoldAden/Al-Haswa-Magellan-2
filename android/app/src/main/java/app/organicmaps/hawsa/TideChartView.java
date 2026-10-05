@@ -251,8 +251,8 @@ public class TideChartView extends View {
                 // Draw label
                 highLowPaint.setColor(event.isHigh ? COLOR_HIGH : COLOR_LOW);
                 highLowPaint.setAlpha(markerAlpha);
-                String label = event.isHigh ? "مد" : "جزر";
-                String timeStr = formatEventTime(evtCal);
+                String label = formatEventTime(evtCal);
+                
                 canvas.drawText(label, x - 20, y - 14, highLowPaint);
 
                 // Draw small height text
@@ -283,7 +283,7 @@ public class TideChartView extends View {
             // Draw current time label
             String timeLabel = String.format(Locale.US, "%d:%02d", 
                 currentHour > 12 ? currentHour - 12 : (currentHour == 0 ? 12 : currentHour), 
-                currentMinute) + (currentHour >= 12 ? "PM" : "AM");
+                currentMinute) + (currentHour >= 12 ? "م" : "ص");
             Paint timeLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             timeLabelPaint.setTextSize(16f);
             timeLabelPaint.setColor(COLOR_CURRENT);
@@ -295,7 +295,7 @@ public class TideChartView extends View {
         int h = cal.get(Calendar.HOUR);
         if (h == 0) h = 12;
         int m = cal.get(Calendar.MINUTE);
-        String ap = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
+        String ap = cal.get(Calendar.AM_PM) == Calendar.AM ? "ص" : "م";
         return String.format(Locale.US, "%d:%02d%s", h, m, ap);
     }
 }
