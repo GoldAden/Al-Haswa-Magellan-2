@@ -5,7 +5,7 @@
     <string name="hawsa_app_subtitle">دليلك البحري الشامل</string>
     <string name="hawsa_logo_desc">شعار الحسوة ماجلان</string>
     <string name="hawsa_map_card">الخريطة</string>
-    <string name="hawsa_map_card_desc">استكشف خريطة الحسوة البحرية مع المعالم والأعماق</string>
+    <string name="hawsa_map_card_desc">استكشف العالم واحفظ مواقعك</string>
     <string name="hawsa_tides_card">المد والجزر</string>
     <string name="hawsa_tides_card_desc">توقعات المد والجزر اليومية والأسبوعية</string>
     <string name="hawsa_moon_card">القمر</string>
