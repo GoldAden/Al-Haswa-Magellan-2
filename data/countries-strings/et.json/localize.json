@@ -518,7 +518,6 @@
   "Ireland_Northern Counties": "Ulster",
   "Isle of Man": "Isle of Man",
   "Israel": "Palestiina",
-  "Israel Region": "Palestiina",
   "Italy": "Itaalia",
   "Italy_Abruzzo": "Abruzzo",
   "Italy_Aosta Valley": "Aosta org",
@@ -2578,7 +2577,5 @@
   "Tanzania_Northern Description": "Tanga, Babati, Arusha, Kilimanjaro, Moshi",
   "Tanzania_Coastal Description": "Morogoro, Dar es Salaam, Lindi, Mtwara, Kibaha",
   "Tanzania_Central Description": "Tabora, Singida, Dodoma",
-  "Tanzania_Western Description": "Kigoma, Mpanda",
-  "Palestine Coast Description": "Yafa, Haifa, Akka, Beersheba, Nazareth, Safad, Tiberias",
-  "Palestine Coast": "Palestiina"
+  "Tanzania_Western Description": "Kigoma, Mpanda"
 }
