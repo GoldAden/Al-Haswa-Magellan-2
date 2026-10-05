@@ -63,7 +63,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
             tvAge.setText(String.format(Locale.US, "عمر القمر: %.1f يوم", age));
         }
 
-        // Rise / Set times
+        // Rise / Set times (separate TextViews)
         String[] riseSet = MoonCalculator.getRiseSetTimes(now);
         TextView tvRise = findViewById(R.id.tv_moon_rise);
         if (tvRise != null) {
