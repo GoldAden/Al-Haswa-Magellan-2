@@ -17,7 +17,7 @@
     <color name="hawsa_text_dark">#415A77</color>
 
     <!-- Status bar -->
-    <color name="hawsa_status_bar_color">#0D1B2A</color>
+    <color name="hawsa_status_bar_color">#0c2340</color>
 
     <!-- Icon circle colors for main cards -->
     <color name="hawsa_icon_circle_blue">#1E3A5F</color>
