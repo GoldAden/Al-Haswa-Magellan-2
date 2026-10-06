@@ -2,7 +2,10 @@ package app.organicmaps.hawsa;
 
 import android.annotation.SuppressLint;
 import android.content.pm.ActivityInfo;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
@@ -20,6 +23,7 @@ import androidx.core.content.res.ResourcesCompat;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -43,6 +47,12 @@ public class HawsaMoonActivity extends AppCompatActivity {
     private static final int COLOR_TEXT_DIM = 0xFF778DA9;
     private static final int COLOR_SEPARATOR = 0xFF1E293B;
 
+    // Arabic day abbreviations
+    private static final String[] DAY_NAMES_AR = {
+        "\u0623\u062D", "\u0625\u062B", "\u062B\u0644", "\u0623\u0631",
+        "\u062E\u0645", "\u062C\u0645", "\u0633\u0628"
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +70,24 @@ public class HawsaMoonActivity extends AppCompatActivity {
         }
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+
+        // Use Riyadh timezone for all calculations
+        TimeZone riyadhTz = TimeZone.getTimeZone("Asia/Riyadh");
+        Calendar now = Calendar.getInstance(riyadhTz);
+        long timeMillis = now.getTimeInMillis();
+
+        // Pre-compute moon data using the actual MoonCalculator API
+        double age = MoonCalculator.getLunarAge(timeMillis);
+        double illum = MoonCalculator.getIllumination(timeMillis);
+        float phase = (float) (age / MoonCalculator.SYNODIC_MONTH); // 0.0–1.0
+        float illumF = (float) illum;
+        String phaseName = MoonCalculator.getPhaseNameArabic(age);
+        String moonrise = MoonCalculator.getMoonriseTime(timeMillis);
+        String moonset = MoonCalculator.getMoonsetTime(timeMillis);
+
+        // Hijri date using the actual HijriDateCalculator API
+        HijriDateCalculator.HijriDate hijriDate = HijriDateCalculator.calculateHijri(now);
+        String hijriStr = HijriDateCalculator.formatHijriArabic(hijriDate);
 
         // Build the entire layout programmatically for full control
         ScrollView scrollView = new ScrollView(this);
@@ -114,14 +142,15 @@ public class HawsaMoonActivity extends AppCompatActivity {
         LinearLayout.LayoutParams moonParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, dp(280));
         moonPhaseView.setLayoutParams(moonParams);
-        rootLayout.addView(moonParams == moonParams ? moonPhaseView : moonPhaseView);
+        moonPhaseView.setPhase(phase, illumF);
+        rootLayout.addView(moonPhaseView);
 
         // === Current Phase Info Card ===
         LinearLayout infoCard = createCard();
 
         // Phase name
         TextView tvPhaseName = new TextView(this);
-        tvPhaseName.setText(getCurrentPhaseNameArabic());
+        tvPhaseName.setText(phaseName);
         tvPhaseName.setTextSize(20);
         tvPhaseName.setTextColor(COLOR_GOLD);
         tvPhaseName.setTypeface(null, Typeface.BOLD);
@@ -130,7 +159,6 @@ public class HawsaMoonActivity extends AppCompatActivity {
         infoCard.addView(tvPhaseName);
 
         // Illumination
-        double illum = MoonCalculator.getMoonIllumination();
         TextView tvIllumination = new TextView(this);
         tvIllumination.setText(String.format(Locale.US, "\u0627\u0644\u0625\u0636\u0627\u0621\u0629: %.0f%%", illum * 100));
         tvIllumination.setTextSize(16);
@@ -140,7 +168,6 @@ public class HawsaMoonActivity extends AppCompatActivity {
         infoCard.addView(tvIllumination);
 
         // Moon age
-        double age = MoonCalculator.getMoonAge();
         TextView tvAge = new TextView(this);
         tvAge.setText(String.format(Locale.US, "\u0639\u0645\u0631 \u0627\u0644\u0642\u0645\u0631: %.1f \u064A\u0648\u0645", age));
         tvAge.setTextSize(14);
@@ -152,14 +179,14 @@ public class HawsaMoonActivity extends AppCompatActivity {
         // Separator
         infoCard.addView(createSeparator());
 
-        // Rise / Set / Transit times
+        // Rise / Set times
         LinearLayout timesGrid = new LinearLayout(this);
         timesGrid.setOrientation(LinearLayout.HORIZONTAL);
         timesGrid.setGravity(Gravity.CENTER);
         timesGrid.setPadding(0, dp(12), 0, dp(8));
 
-        timesGrid.addView(createTimeColumn("\u0627\u0644\u0634\u0631\u0648\u0642", MoonCalculator.getMoonRiseTimeStr()));
-        timesGrid.addView(createTimeColumn("\u0627\u0644\u063A\u0631\u0648\u0628", MoonCalculator.getMoonSetTimeStr()));
+        timesGrid.addView(createTimeColumn("\u0627\u0644\u0634\u0631\u0648\u0642", moonrise));
+        timesGrid.addView(createTimeColumn("\u0627\u0644\u063A\u0631\u0648\u0628", moonset));
 
         infoCard.addView(timesGrid);
 
@@ -167,7 +194,6 @@ public class HawsaMoonActivity extends AppCompatActivity {
         infoCard.addView(createSeparator());
 
         // Hijri date
-        String hijriStr = HijriDateCalculator.getHijriDateStr();
         TextView tvHijri = new TextView(this);
         tvHijri.setText("\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0647\u062C\u0631\u064A: " + hijriStr);
         tvHijri.setTextSize(16);
@@ -178,10 +204,9 @@ public class HawsaMoonActivity extends AppCompatActivity {
         infoCard.addView(tvHijri);
 
         // Gregorian date
-        Calendar today = Calendar.getInstance(TimeZone.getDefault());
         SimpleDateFormat gregFmt = new SimpleDateFormat("EEEE, d MMMM yyyy", new Locale("ar"));
         TextView tvGregorian = new TextView(this);
-        tvGregorian.setText("\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F\u064A: " + gregFmt.format(today.getTime()));
+        tvGregorian.setText("\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F\u064A: " + gregFmt.format(now.getTime()));
         tvGregorian.setTextSize(13);
         tvGregorian.setTextColor(COLOR_TEXT_DIM);
         tvGregorian.setGravity(Gravity.CENTER);
@@ -202,16 +227,19 @@ public class HawsaMoonActivity extends AppCompatActivity {
         tvWeeklyTitle.setPadding(0, 0, 0, dp(12));
         weeklyCard.addView(tvWeeklyTitle);
 
+        // Use getWeeklyMoonInfo() which returns List<MoonDayInfo>
+        List<MoonCalculator.MoonDayInfo> weeklyInfo = MoonCalculator.getWeeklyMoonInfo();
+
         LinearLayout weeklyStrip = new LinearLayout(this);
         weeklyStrip.setOrientation(LinearLayout.HORIZONTAL);
         weeklyStrip.setGravity(Gravity.CENTER);
         weeklyStrip.setPadding(0, 0, 0, dp(4));
 
-        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
-        for (int i = 0; i < 7; i++) {
-            MoonCalculator.MoonDayData dayData = MoonCalculator.getDayData(cal);
-            weeklyStrip.addView(createDayMoonIcon(dayData.phase, dayData.illumination, i == 0));
-            cal.add(Calendar.DAY_OF_MONTH, 1);
+        for (int i = 0; i < weeklyInfo.size(); i++) {
+            MoonCalculator.MoonDayInfo dayInfo = weeklyInfo.get(i);
+            float dayPhase = (float) (dayInfo.age / MoonCalculator.SYNODIC_MONTH);
+            float dayIllum = (float) dayInfo.illumination;
+            weeklyStrip.addView(createDayMoonIcon(dayPhase, dayIllum, i == 0));
         }
 
         weeklyCard.addView(weeklyStrip);
@@ -221,13 +249,13 @@ public class HawsaMoonActivity extends AppCompatActivity {
         dayLabels.setOrientation(LinearLayout.HORIZONTAL);
         dayLabels.setGravity(Gravity.CENTER);
 
-        String[] dayNamesAr = {"\u0623\u062D", "\u0625\u062B", "\u062B\u0644", "\u0623\u0631", "\u062E\u0645", "\u062C\u0645", "\u0633\u0628"};
-        Calendar calLabels = Calendar.getInstance(TimeZone.getDefault());
-        int startDow = calLabels.get(Calendar.DAY_OF_WEEK);
-        for (int i = 0; i < 7; i++) {
-            int dow = (startDow - 1 + i) % 7;
+        for (int i = 0; i < weeklyInfo.size(); i++) {
+            MoonCalculator.MoonDayInfo dayInfo = weeklyInfo.get(i);
+            int dow = dayInfo.date.get(Calendar.DAY_OF_WEEK) - 1; // 0=Sun
+            if (dow < 0) dow = 0;
+            if (dow > 6) dow = 6;
             TextView lbl = new TextView(this);
-            lbl.setText(dayNamesAr[dow]);
+            lbl.setText(DAY_NAMES_AR[dow]);
             lbl.setTextSize(11);
             lbl.setTextColor(i == 0 ? COLOR_GOLD : COLOR_TEXT_DIM);
             lbl.setGravity(Gravity.CENTER);
@@ -250,11 +278,6 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
         scrollView.addView(rootLayout);
         setContentView(scrollView);
-
-        // Set initial phase into the animated view
-        float currentPhase = (float) MoonCalculator.getMoonPhase();
-        float currentIllum = (float) MoonCalculator.getMoonIllumination();
-        moonPhaseView.setPhase(currentPhase, currentIllum);
     }
 
     @Override
@@ -349,11 +372,12 @@ public class HawsaMoonActivity extends AppCompatActivity {
         return col;
     }
 
-    private View createDayMoonIcon(float phase, float illumination, boolean isToday) {
+    @SuppressLint("ViewConstructor")
+    private View createDayMoonIcon(final float phase, final float illumination, final boolean isToday) {
         // Small moon icon — draw using a custom mini view
         View icon = new View(this) {
             @Override
-            protected void onDraw(android.graphics.Canvas canvas) {
+            protected void onDraw(Canvas canvas) {
                 super.onDraw(canvas);
                 int w = getWidth();
                 int h = getHeight();
@@ -374,7 +398,6 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
                 // Dark overlay for phase
                 Path darkPath = new Path();
-                // Simplified terminator for small icon
                 float p = phase;
                 float curveFactor;
                 if (p <= 0.5f) {
@@ -416,20 +439,5 @@ public class HawsaMoonActivity extends AppCompatActivity {
                 0, iconSize, 1f);
         icon.setLayoutParams(iconParams);
         return icon;
-    }
-
-    private String getCurrentPhaseNameArabic() {
-        double phase = MoonCalculator.getMoonPhase();
-        double age = MoonCalculator.getMoonAge();
-
-        if (age < 1.85) return "\u0645\u062D\u0627\u0642";       // New moon
-        if (age < 5.55) return "\u0647\u0644\u0627\u0644 \u0623\u0648\u0644";  // Waxing crescent
-        if (age < 9.25) return "\u062A\u0631\u0628\u064A\u0639 \u0623\u0648\u0644"; // First quarter
-        if (age < 12.95) return "\u0623\u062C\u0628\u0632 \u0645\u062D\u062F\u0628"; // Waxing gibbous
-        if (age < 16.65) return "\u0628\u062F\u0631";          // Full moon
-        if (age < 20.35) return "\u0623\u062C\u0628\u0632 \u062A\u0646\u0627\u0642\u0635"; // Waning gibbous
-        if (age < 24.05) return "\u062A\u0631\u0628\u064A\u0639 \u0622\u062E\u0631"; // Last quarter
-        if (age < 27.75) return "\u0647\u0644\u0627\u0644 \u0622\u062E\u0631"; // Waning crescent
-        return "\u0645\u062D\u0627\u0642"; // New moon
     }
 }
