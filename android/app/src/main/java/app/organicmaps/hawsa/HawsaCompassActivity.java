@@ -363,7 +363,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSize, iconSize);
             iconParams.setMargins(0, 0, 12, 0);
             iconCircle.setLayoutParams(iconParams);
-            iconCircle.setBackground(createCircleDrawable(PRAYER_COLORS[i], 4f));
+            iconCircle.setBackground(createCircleDrawable(PRAYER_COLORS[i]));
 
             // Prayer name
             TextView tvName = new TextView(this);
