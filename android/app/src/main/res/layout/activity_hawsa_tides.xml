@@ -1,107 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0c2340"
-    android:fillViewport="true">
+    android:orientation="vertical"
+    android:background="#0D1B2A"
+    android:padding="0dp">
 
+    <!-- Top bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="16dp"
-        android:gravity="center_horizontal">
+        android:gravity="center_vertical"
+        android:background="#E60D1B2A">
+        android:layoutDirection="rtl">
+
+        <ImageView
+            android:id="@+id/btn_tides_back"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:contentDescription="@string/hawsa_tides_title"
+            android:tint="#D4AF37"
+            android:padding="4dp" />
 
         <TextView
             android:id="@+id/tv_tides_title"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:textSize="24sp"
-            android:textColor="#E0E1DD"
+            android:layout_weight="1"
+            android:textSize="20sp"
+            android:textColor="#D4AF37"
             android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="8dp" />
+            android:gravity="center"
+            android:paddingEnd="36dp" />
+    </LinearLayout>
+
+    <!-- Station name -->
+    <TextView
+        android:id="@+id/tv_station_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="14sp"
+        android:textColor="#778DA9"
+        android:gravity="center"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp" />
+
+    <!-- Tide chart -->
+    <app.organicmaps.hawsa.TideChartView
+        android:id="@+id/tide_chart_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Day selector buttons -->
+    <LinearLayout
+        android:id="@+id/days_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:gravity="center"
+        android:layoutDirection="rtl" />
+
+    <!-- Weekly summary -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="160dp"
+        android:padding="12dp">
 
         <TextView
-            android:id="@+id/tv_tides_location"
-            android:layout_width="wrap_content"
+            android:id="@+id/tv_weekly_summary"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="14sp"
+            android:textSize="12sp"
             android:textColor="#778DA9"
-            android:layout_marginBottom="16dp" />
+            android:lineSpacingExtra="4dp" />
+    </ScrollView>
 
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="#142e50"
-            xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!-- Designer credit -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="\u062A\u0645 \u062A\u0635\u0645\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0645\u0646 \u0642\u0628\u0644 \u0623\u0635\u064A\u0644 \u0635\u0627\u062F\u0642"
+        android:textSize="10sp"
+        android:textColor="#415A77"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="8dp" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="رسم بياني للمد والجزر"
-                    android:textSize="14sp"
-                    android:textColor="#778DA9"
-                    android:layout_marginBottom="8dp" />
-
-                <app.organicmaps.hawsa.TideChartView
-                    android:id="@+id/tide_chart"
-                    android:layout_width="match_parent"
-                    android:layout_height="200dp" />
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp">
-
-                    <LinearLayout
-                        android:id="@+id/day_button_container"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal" />
-                </HorizontalScrollView>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="#142e50"
-            xmlns:app="http://schemas.android.com/apk/res-auto">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="توقعات أسبوعية"
-                    android:textSize="16sp"
-                    android:textColor="#E0E1DD"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="8dp" />
-
-                <LinearLayout
-                    android:id="@+id/weekly_tides_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>
