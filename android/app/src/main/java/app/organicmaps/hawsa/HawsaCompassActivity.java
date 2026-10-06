@@ -31,7 +31,7 @@ import java.util.TimeZone;
 import app.organicmaps.R;
 
 /**
- * Redesigned fullscreen Compass & Qibla activity with 5 Adhan times.
+ * Fullscreen Compass & Qibla activity with 5 Adhan times.
  * Redmi-style immersive design. GPS-based location with saved fallback.
  */
 public class HawsaCompassActivity extends AppCompatActivity {
@@ -110,13 +110,6 @@ public class HawsaCompassActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().setStatusBarColor(0x00000000);
             getWindow().setNavigationBarColor(0x00000000);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                View decor = getWindow().getDecorView();
-                int flags = decor.getSystemUiVisibility();
-                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-                decor.setSystemUiVisibility(flags);
-            }
         }
 
         // Immersive sticky mode
@@ -225,6 +218,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private void requestLocationUpdates() {
         if (locationManager == null) return;
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -345,7 +339,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
                 break;
             }
         }
-        if (nextPrayerIdx == -1) nextPrayerIdx = 0; // All passed, next is Fajr tomorrow
+        if (nextPrayerIdx == -1) nextPrayerIdx = 0;
 
         String[] prayerTimes = {
             times.getFajrStr(), times.getDhuhrStr(), times.getAsrStr(),
@@ -369,8 +363,6 @@ public class HawsaCompassActivity extends AppCompatActivity {
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSize, iconSize);
             iconParams.setMargins(0, 0, 12, 0);
             iconCircle.setLayoutParams(iconParams);
-            iconCircle.setBackgroundColor(PRAYER_COLORS[i]);
-            // Round the corners programmatically
             iconCircle.setBackground(createCircleDrawable(PRAYER_COLORS[i], 4f));
 
             // Prayer name
@@ -392,11 +384,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
 
             // Next indicator
             if (isNext) {
-                TextView tvNext = new TextView(this);
-                tvNext.setText(" \u0627\u0644\u0642\u0627\u062F\u0645\u0629");
-                tvNext.setTextSize(10);
-                tvNext.setTextColor(0xB3D4AF37);
-                tvTime.append(tvNext.getText());
+                tvTime.append(" \u0627\u0644\u0642\u0627\u062F\u0645\u0629");
             }
 
             row.addView(iconCircle);
@@ -420,7 +408,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
         }
     }
 
-    private android.graphics.drawable.GradientDrawable createCircleDrawable(int color, float cornerRadius) {
+    private android.graphics.drawable.GradientDrawable createCircleDrawable(int color) {
         android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
         drawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
         drawable.setColor(color);
