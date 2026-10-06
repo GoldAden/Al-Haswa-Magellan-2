@@ -41,10 +41,11 @@ import app.organicmaps.R;
 public class HawsaTidesActivity extends AppCompatActivity {
 
     private TideChartView tideChartView;
-    private LinearLayout daysContainer;
+    private LinearLayout dayButtonContainer;
+    private LinearLayout weeklyTidesContainer;
     private TextView tvTidesTitle;
-    private TextView tvStationName;
-    private TextView tvWeeklySummary;
+    private TextView tvTidesLocation;
+    private TextView tvCurrentStatus;
     private ImageView btnBack;
 
     private LocationManager locationManager;
@@ -102,10 +103,11 @@ public class HawsaTidesActivity extends AppCompatActivity {
         // tide_chart_view, days_container, tv_weekly_summary
         btnBack = findViewById(R.id.btn_tides_back);
         tvTidesTitle = findViewById(R.id.tv_tides_title);
-        tvStationName = findViewById(R.id.tv_station_name);
-        tideChartView = findViewById(R.id.tide_chart_view);
-        daysContainer = findViewById(R.id.days_container);
-        tvWeeklySummary = findViewById(R.id.tv_weekly_summary);
+        tvTidesLocation = findViewById(R.id.tv_tides_location);
+        tvCurrentStatus = findViewById(R.id.tv_current_status);
+        tideChartView = findViewById(R.id.tide_chart);
+        dayButtonContainer = findViewById(R.id.day_button_container);
+        weeklyTidesContainer = findViewById(R.id.weekly_tides_container);
 
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
@@ -227,12 +229,38 @@ public class HawsaTidesActivity extends AppCompatActivity {
     }
 
     private void updateStationDisplay() {
-        if (tvStationName != null) {
+        if (tvTidesLocation != null) {
             String stationName = TideCalculator.getStationNameAr();
             double dist = TideCalculator.getDistanceToNearestStationKm();
             String distStr = dist < 1 ? String.format(Locale.US, "%.0f\u0645", dist * 1000) :
                     String.format(Locale.US, "%.1f\u0643\u0645", dist);
-            tvStationName.setText("\u0645\u062D\u0637\u0629 " + stationName + " (" + distStr + ")");
+            tvTidesLocation.setText("\u0645\u062D\u0637\u0629 " + stationName + " (" + distStr + ")");
+        }
+        updateCurrentStatus();
+    }
+
+    private void updateCurrentStatus() {
+        if (tvCurrentStatus == null) return;
+        List<TideCalculator.TideEvent> todayEvents = TideCalculator.getDayTideEvents(Calendar.getInstance());
+        if (todayEvents != null && !todayEvents.isEmpty()) {
+            // Find the most recent event to determine current state
+            long now = System.currentTimeMillis();
+            TideCalculator.TideEvent lastEvent = null;
+            for (TideCalculator.TideEvent e : todayEvents) {
+                if (e.timeMillis <= now) {
+                    lastEvent = e;
+                } else {
+                    break;
+                }
+            }
+            if (lastEvent != null) {
+                boolean isRising = !lastEvent.isHigh;
+                String statusText = isRising ? "\u0645\u062F \u0635\u0627\u0639\u062F \u2191" : "\u062C\u0632\u0631 \u0645\u0627\u062D\u0628 \u2193";
+                tvCurrentStatus.setText(statusText);
+                tvCurrentStatus.setTextColor(isRising ? 0xFF10B981 : 0xFFEF4444);
+            } else {
+                tvCurrentStatus.setText("");
+            }
         }
     }
 
@@ -254,8 +282,8 @@ public class HawsaTidesActivity extends AppCompatActivity {
      * Modern pill-style day selector buttons
      */
     private void buildDayPills() {
-        if (daysContainer == null) return;
-        daysContainer.removeAllViews();
+        if (dayButtonContainer == null) return;
+        dayButtonContainer.removeAllViews();
 
         Calendar cal = Calendar.getInstance();
 
@@ -304,7 +332,7 @@ public class HawsaTidesActivity extends AppCompatActivity {
             );
             params.setMargins(6, 0, 6, 0);
             pill.setLayoutParams(params);
-            daysContainer.addView(pill);
+            dayButtonContainer.addView(pill);
         }
     }
 
@@ -323,7 +351,7 @@ public class HawsaTidesActivity extends AppCompatActivity {
     }
 
     private void updateWeeklySummaryText() {
-        if (tvWeeklySummary == null) return;
+        if (weeklyTidesContainer == null) return;
 
         List<TideCalculator.DayTideSummary> summary = TideCalculator.getWeeklySummary();
 
@@ -367,7 +395,18 @@ public class HawsaTidesActivity extends AppCompatActivity {
             sb.append("\n\n");
         }
 
-        tvWeeklySummary.setText(sb.toString().trim());
+        // Build a summary TextView if not already present
+        TextView summaryText = null;
+        if (weeklyTidesContainer.getChildCount() > 0) {
+            summaryText = (TextView) weeklyTidesContainer.getChildAt(0);
+        }
+        if (summaryText == null) {
+            summaryText = new TextView(this);
+            summaryText.setTextSize(12);
+            summaryText.setTextColor(0xFFE0E1DD);
+            weeklyTidesContainer.addView(summaryText);
+        }
+        summaryText.setText(sb.toString().trim());
     }
 
     private String formatEventTime(TideCalculator.TideEvent event) {
