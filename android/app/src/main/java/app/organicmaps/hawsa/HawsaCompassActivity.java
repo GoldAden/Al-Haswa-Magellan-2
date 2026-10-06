@@ -31,8 +31,9 @@ import java.util.TimeZone;
 import app.organicmaps.R;
 
 /**
- * Fullscreen Compass & Qibla activity with 5 Adhan times.
- * Redmi-style immersive design. GPS-based location with saved fallback.
+ * Fullscreen Compass & Qibla activity with 5 Azan times.
+ * Modern immersive design. GPS-based location with saved fallback.
+ * Fixed: status bar color matches compass bg, GPS prompt single-dismiss, auto-dismiss on GPS enable.
  */
 public class HawsaCompassActivity extends AppCompatActivity {
 
@@ -51,6 +52,10 @@ public class HawsaCompassActivity extends AppCompatActivity {
     private static final String KEY_TZ = "last_tz";
 
     private boolean locationAcquired = false;
+
+    // GPS dialog reference — prevents stacking and allows single-dismiss
+    private AlertDialog gpsDialog = null;
+    private boolean isCheckingGpsOnResume = false;
 
     // Only 5 Azan prayers (NO Sunrise)
     private static final String[] PRAYER_NAMES_AR = {
@@ -87,6 +92,8 @@ public class HawsaCompassActivity extends AppCompatActivity {
         @Override
         public void onProviderEnabled(String provider) {
             requestLocationUpdates();
+            // Auto-dismiss GPS dialog if it was showing
+            dismissGpsDialog();
         }
 
         @Override
@@ -107,9 +114,10 @@ public class HawsaCompassActivity extends AppCompatActivity {
                     WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
 
+        // === FIX: Status bar color matches compass background ===
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(0x00000000);
-            getWindow().setNavigationBarColor(0x00000000);
+            getWindow().setStatusBarColor(0xFF0D1B2A);  // Match COLOR_BG exactly
+            getWindow().setNavigationBarColor(0xFF0D1B2A);
         }
 
         // Immersive sticky mode
@@ -173,6 +181,14 @@ public class HawsaCompassActivity extends AppCompatActivity {
             requestLocationUpdates();
         }
         hideSystemUI();
+
+        // === FIX: Auto-dismiss GPS dialog if GPS was enabled while away ===
+        if (gpsDialog != null && gpsDialog.isShowing()) {
+            if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                dismissGpsDialog();
+                requestLocationUpdates();
+            }
+        }
     }
 
     @Override
@@ -308,18 +324,40 @@ public class HawsaCompassActivity extends AppCompatActivity {
         return "\u0634\u0645\u0627\u0644";
     }
 
+    // === FIX: GPS prompt with single-dismiss and auto-dismiss ===
     private void showGPSPrompt() {
-        new AlertDialog.Builder(this, R.style.HawsaAlertDialog)
+        // Don't stack dialogs
+        if (gpsDialog != null && gpsDialog.isShowing()) {
+            return;
+        }
+
+        gpsDialog = new AlertDialog.Builder(this, R.style.HawsaAlertDialog)
                 .setTitle("\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0648\u0642\u0639")
                 .setMessage("\u064A\u062C\u0628 \u062A\u0641\u0639\u064A\u0644 \u062E\u062F\u0645\u0629 \u0627\u0644\u0645\u0648\u0642\u0639 (GPS) \u0644\u062F\u0642\u0629 \u0627\u062A\u062C\u0627\u0647 \u0627\u0644\u0642\u0628\u0644\u0629 \u0648\u0623\u0648\u0642\u0627\u062A \u0627\u0644\u0623\u0630\u0627\u0646. \u0647\u0644 \u062A\u0631\u064A\u062F \u0627\u0644\u0630\u0647\u0627\u0628 \u0625\u0644\u0649 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A\u061F")
                 .setPositiveButton("\u0641\u062A\u062D \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A", (dialog, which) -> {
                     try {
                         startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     } catch (Exception ignored) {}
+                    gpsDialog = null;
                 })
-                .setNegativeButton("\u0625\u0644\u063A\u0627\u0621", null)
-                .setCancelable(false)
+                .setNegativeButton("\u0625\u0644\u063A\u0627\u0621", (dialog, which) -> {
+                    // Single press dismisses immediately
+                    gpsDialog = null;
+                })
+                .setCancelable(true)  // === FIX: Allow back press to dismiss too ===
+                .setOnCancelListener(dialog -> {
+                    gpsDialog = null;
+                })
                 .show();
+    }
+
+    private void dismissGpsDialog() {
+        if (gpsDialog != null) {
+            try {
+                gpsDialog.dismiss();
+            } catch (Exception ignored) {}
+            gpsDialog = null;
+        }
     }
 
     private void buildPrayerTimes() {
