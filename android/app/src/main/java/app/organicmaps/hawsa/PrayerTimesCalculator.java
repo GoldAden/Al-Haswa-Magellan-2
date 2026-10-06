@@ -4,23 +4,36 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 /**
- * Islamic prayer times calculator for Al-Haswa (19.4431°N, 40.5167°E)
- * Using standard calculation method (Muslim World League)
+ * Islamic prayer times calculator with dynamic GPS-based coordinates
+ * Using Muslim World League calculation method (Fajr 18°, Isha 17°)
  * All times in AM/PM format
  */
 public class PrayerTimesCalculator {
 
-    private static final double LAT = 19.4431;
-    private static final double LON = 40.5167;
-    private static final double TIMEZONE_OFFSET = 3.0; // AST (UTC+3)
+    // Dynamic coordinates (set from GPS)
+    private static double lat = 19.4431;
+    private static double lon = 40.5167;
+    private static double timezoneOffset = 3.0; // AST (UTC+3)
 
     // Muslim World League angles
     private static final double FAJR_ANGLE = 18.0;
     private static final double ISHA_ANGLE = 17.0;
 
-    // Sun's position calculations
     private static double toRad(double deg) { return deg * Math.PI / 180.0; }
     private static double toDeg(double rad) { return rad * 180.0 / Math.PI; }
+
+    /**
+     * Set location coordinates for prayer calculations
+     */
+    public static void setLocation(double latitude, double longitude, double tzOffset) {
+        lat = latitude;
+        lon = longitude;
+        timezoneOffset = tzOffset;
+    }
+
+    public static double getLatitude() { return lat; }
+    public static double getLongitude() { return lon; }
+    public static double getTimezoneOffset() { return timezoneOffset; }
 
     /**
      * Calculate solar declination for a given day of year
@@ -42,25 +55,43 @@ public class PrayerTimesCalculator {
      */
     private static double solarNoon(int dayOfYear) {
         double eqt = equationOfTime(dayOfYear);
-        return 12.0 - eqt / 60.0 - LON / 15.0 + TIMEZONE_OFFSET;
+        return 12.0 - eqt / 60.0 - lon / 15.0 + timezoneOffset;
     }
 
     /**
      * Calculate hour angle for a given sun altitude
      */
-    private static double hourAngle(double lat, double decl, double altitude) {
-        double latRad = toRad(lat);
+    private static double hourAngle(double latitude, double decl, double altitude) {
+        double latRad = toRad(latitude);
         double declRad = toRad(decl);
         double altRad = toRad(altitude);
-        double cosH = (Math.sin(altRad) - Math.sin(latRad) * Math.sin(declRad)) 
+        double cosH = (Math.sin(altRad) - Math.sin(latRad) * Math.sin(declRad))
                       / (Math.cos(latRad) * Math.cos(declRad));
-        if (cosH > 1) return -1; // Sun never reaches this altitude
-        if (cosH < -1) return -1; // Sun never sets below this altitude
+        if (cosH > 1) return -1;
+        if (cosH < -1) return -1;
         return toDeg(Math.acos(cosH));
     }
 
     /**
-     * Calculate all 5 prayer times for today
+     * Calculate Qibla bearing from current location to Mecca
+     * Mecca coordinates: 21.4225°N, 39.8262°E
+     */
+    public static double calculateQiblaBearing() {
+        double meccaLat = 21.4225;
+        double meccaLon = 39.8262;
+        double latRad = toRad(lat);
+        double meccaLatRad = toRad(meccaLat);
+        double deltaLon = toRad(meccaLon - lon);
+        double bearing = toDeg(Math.atan2(
+            Math.sin(deltaLon),
+            Math.cos(latRad) * Math.tan(meccaLatRad) - Math.sin(latRad) * Math.cos(deltaLon)
+        ));
+        if (bearing < 0) bearing += 360;
+        return bearing;
+    }
+
+    /**
+     * Calculate 5 prayer times (no Sunrise) for a given calendar
      */
     public static PrayerTimes getPrayerTimes(Calendar cal) {
         PrayerTimes pt = new PrayerTimes();
@@ -69,36 +100,43 @@ public class PrayerTimesCalculator {
         double noon = solarNoon(dayOfYear);
 
         // Fajr: sun at -18° below horizon
-        double fajrHA = hourAngle(LAT, decl, -FAJR_ANGLE);
+        double fajrHA = hourAngle(lat, decl, -FAJR_ANGLE);
         pt.fajr = noon - fajrHA / 15.0;
 
-        // Sunrise: sun at 0° + refraction correction (-0.833°)
-        double sunriseHA = hourAngle(LAT, decl, -0.833);
-        pt.sunrise = noon - sunriseHA / 15.0;
-
         // Dhuhr: solar noon + small adjustment
-        pt.dhuhr = noon + 0.0167; // 1 min after noon
+        pt.dhuhr = noon + 0.0167;
 
         // Asr (Shafi'i: shadow = object + shadow at noon)
-        double asrAlt = toDeg(Math.atan(1.0 / (1.0 + Math.abs(Math.tan(toRad(LAT - decl))))));
-        double asrHA = hourAngle(LAT, decl, asrAlt);
+        double asrAlt = toDeg(Math.atan(1.0 / (1.0 + Math.abs(Math.tan(toRad(lat - decl))))));
+        double asrHA = hourAngle(lat, decl, asrAlt);
         pt.asr = noon + asrHA / 15.0;
 
-        // Maghrib: sunset
-        pt.maghrib = noon + sunriseHA / 15.0;
+        // Maghrib: sunset (sun at -0.833°)
+        double sunsetHA = hourAngle(lat, decl, -0.833);
+        pt.maghrib = noon + sunsetHA / 15.0;
 
         // Isha: sun at -17° below horizon
-        double ishaHA = hourAngle(LAT, decl, -ISHA_ANGLE);
+        double ishaHA = hourAngle(lat, decl, -ISHA_ANGLE);
         pt.isha = noon + ishaHA / 15.0;
 
         return pt;
     }
 
     /**
-     * Get today's prayer times for Al-Haswa
+     * Get today's prayer times using current dynamic location
      */
     public static PrayerTimes getTodayPrayerTimes() {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
+        String tzId = "GMT";
+        if (timezoneOffset == 3.0) tzId = "Asia/Riyadh";
+        else if (timezoneOffset == 2.0) tzId = "Africa/Cairo";
+        else if (timezoneOffset == 1.0) tzId = "Europe/Paris";
+        else if (timezoneOffset == 0.0) tzId = "UTC";
+        else if (timezoneOffset == -5.0) tzId = "America/New_York";
+        else {
+            // Generic offset
+            tzId = TimeZone.getTimeZone("GMT" + (timezoneOffset >= 0 ? "+" : "") + (int)timezoneOffset).getID();
+        }
+        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone(tzId));
         return getPrayerTimes(cal);
     }
 
@@ -108,28 +146,26 @@ public class PrayerTimesCalculator {
     public static String formatToAmPm(double decimalHours) {
         if (decimalHours < 0 || decimalHours > 24) return "--:--";
         if (decimalHours >= 24) decimalHours -= 24;
-        
+
         int totalMinutes = (int) Math.round(decimalHours * 60.0);
         int hours = totalMinutes / 60;
         int minutes = totalMinutes % 60;
-        
+
         boolean isPM = hours >= 12;
         if (hours > 12) hours -= 12;
         if (hours == 0) hours = 12;
-        
+
         return String.format("%d:%02d %s", hours, minutes, isPM ? "PM" : "AM");
     }
 
     public static class PrayerTimes {
         public double fajr;
-        public double sunrise;
         public double dhuhr;
         public double asr;
         public double maghrib;
         public double isha;
 
         public String getFajrStr() { return formatToAmPm(fajr); }
-        public String getSunriseStr() { return formatToAmPm(sunrise); }
         public String getDhuhrStr() { return formatToAmPm(dhuhr); }
         public String getAsrStr() { return formatToAmPm(asr); }
         public String getMaghribStr() { return formatToAmPm(maghrib); }
