@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0D1B2A">
 
     <!-- Fullscreen Compass View -->
     <app.organicmaps.hawsa.CompassView
-        android:id="+id/compass_view"
+        android:id="@+id/compass_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="180dp" />
@@ -18,23 +19,25 @@
         android:orientation="horizontal"
         android:padding="16dp"
         android:gravity="center_vertical"
-        android:background="#800D1B2A">
-        android:layout_gravity="top">
+        android:layout_gravity="top"
+        android:background="#800D1B2A"
+        android:layoutDirection="rtl">
 
         <ImageView
-            android:id="+id/btn_compass_back"
+            android:id="@+id/btn_compass_back"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:contentDescription="@string/hawsa_compass_title"
-            android:tint="#D4AF37"
+            android:src="@drawable/ic_hawsa_back"
+            android:contentDescription="@string/hawsa_back"
+            app:tint="#D4AF37"
             android:padding="4dp" />
 
         <TextView
-            android:id="+id/tv_compass_title"
+            android:id="@+id/tv_compass_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:text="@string/hawsa_compass_title"
             android:textSize="20sp"
             android:textColor="#D4AF37"
             android:textStyle="bold"
@@ -54,7 +57,7 @@
         android:padding="10dp">
 
         <TextView
-            android:id="+id/tv_qibla_direction"
+            android:id="@+id/tv_qibla_direction"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="15sp"
@@ -62,11 +65,19 @@
             android:textStyle="bold" />
 
         <TextView
-            android:id="+id/tv_qibla_degrees"
+            android:id="@+id/tv_qibla_degrees"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="13sp"
             android:textColor="#778DA9" />
+
+        <TextView
+            android:id="@+id/tv_qibla_arrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textColor="#D4AF37"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <!-- Prayer times panel at bottom -->
@@ -76,20 +87,21 @@
         android:orientation="vertical"
         android:layout_gravity="bottom"
         android:background="#E60D1B2A"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:layoutDirection="rtl">
 
         <!-- Prayer times header -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="\u0623\u0648\u0642\u0627\u062A \u0627\u0644\u0623\u0630\u0627\u0646"
+            android:text="@string/hawsa_prayer_times"
             android:textSize="17sp"
             android:textColor="#D4AF37"
             android:textStyle="bold"
             android:layout_marginBottom="8dp" />
 
         <LinearLayout
-            android:id="+id/prayer_times_container"
+            android:id="@+id/prayer_times_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" />
@@ -98,7 +110,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="\u062A\u0645 \u062A\u0635\u0645\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0645\u0646 \u0642\u0628\u0644 \u0623\u0635\u064A\u0644 \u0635\u0627\u062F\u0642"
+            android:text="@string/hawsa_designer_credit"
             android:textSize="10sp"
             android:textColor="#415A77"
             android:layout_marginTop="8dp"
