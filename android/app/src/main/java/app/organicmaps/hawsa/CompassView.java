@@ -2,53 +2,60 @@ package app.organicmaps.hawsa;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.RotateAnimation;
 
 import java.util.Locale;
 
 /**
- * Real compass view with rotating dial and Qibla needle
- * Shows magnetic north with a rotating compass rose
- * and a fixed Qibla indicator pointing to Mecca
+ * Redmi-style modern compass view with smooth dial rotation,
+ * clean tick marks, cardinal directions, Qibla indicator,
+ * and heading display.
  */
 public class CompassView extends View implements SensorEventListener {
 
-    // Qibla direction from Al-Haswa: ~248° from North
-    private static final double QIBLA_BEARING = 248.0;
+    private double qiblaBearing = 0;
 
-    // Colors - maritime dark theme
-    private static final int COLOR_BG = 0xFF1B263B;
-    private static final int COLOR_RING = 0xFF415A77;
-    private static final int COLOR_TICK = 0xFF778DA9;
-    private static final int COLOR_MAJOR_TICK = 0xFFE0E1DD;
-    private static final int COLOR_NORTH = 0xFFFF6F61;        // Orange-red for North
-    private static final int COLOR_SOUTH = 0xFF778DA9;
-    private static final int COLOR_QIBLA = 0xFFFFD700;       // Gold for Qibla
-    private static final int COLOR_CENTER = 0xFFE0E1DD;
-    private static final int COLOR_DEGREE_TEXT = 0xFF778DA9;
+    // Redmi-style colors
+    private static final int COLOR_BG = 0xFF0D1B2A;
+    private static final int COLOR_DIAL_BG = 0xFF1B2838;
+    private static final int COLOR_OUTER_RING = 0xFF2C3E50;
+    private static final int COLOR_TICK = 0xFF4A5568;
+    private static final int COLOR_MAJOR_TICK = 0xFFA0AEC0;
+    private static final int COLOR_DEGREE_TEXT = 0xFF718096;
+    private static final int COLOR_NORTH = 0xFFE53E3E;
+    private static final int COLOR_EAST = 0xFF3182CE;
+    private static final int COLOR_SOUTH = 0xFFD69E2E;
+    private static final int COLOR_WEST = 0xFF38A169;
+    private static final int COLOR_QIBLA_ARROW = 0xFFFFD700;
+    private static final int COLOR_QIBLA_LABEL = 0xB3FFD700;
+    private static final int COLOR_CROSSHAIR = 0xFFCBD5E0;
+    private static final int COLOR_CENTER_DOT = 0xFFE53E3E;
+    private static final int COLOR_HEADING_TEXT = 0xFFE2E8F0;
+    private static final int COLOR_HEADING_BG = 0xE0102030;
 
-    private Paint ringPaint;
+    private Paint dialBgPaint;
+    private Paint outerRingPaint;
     private Paint tickPaint;
     private Paint majorTickPaint;
-    private Paint northPaint;
-    private Paint southPaint;
-    private Paint qiblaPaint;
-    private Paint centerPaint;
     private Paint degreePaint;
-    private Paint bgPaint;
+    private Paint cardinalPaint;
+    private Paint qiblaArrowPaint;
+    private Paint qiblaLabelPaint;
+    private Paint crosshairPaint;
+    private Paint centerDotPaint;
+    private Paint headingPaint;
+    private Paint headingBgPaint;
     private Paint innerRingPaint;
 
     private SensorManager sensorManager;
@@ -59,8 +66,9 @@ public class CompassView extends View implements SensorEventListener {
     private float[] geomagneticValues = null;
     private float currentAzimuth = 0f;
     private float targetAzimuth = 0f;
-
     private float smoothAzimuth = 0f;
+
+    private long lastInvalidateTime = 0;
 
     public CompassView(Context context) {
         super(context);
@@ -78,14 +86,23 @@ public class CompassView extends View implements SensorEventListener {
     }
 
     private void init(Context context) {
-        ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        ringPaint.setStyle(Paint.Style.STROKE);
-        ringPaint.setStrokeWidth(4f);
-        ringPaint.setColor(COLOR_RING);
+        dialBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        dialBgPaint.setStyle(Paint.Style.FILL);
+        dialBgPaint.setColor(COLOR_DIAL_BG);
+
+        outerRingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        outerRingPaint.setStyle(Paint.Style.STROKE);
+        outerRingPaint.setStrokeWidth(6f);
+        outerRingPaint.setColor(COLOR_OUTER_RING);
+
+        innerRingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        innerRingPaint.setStyle(Paint.Style.STROKE);
+        innerRingPaint.setStrokeWidth(2f);
+        innerRingPaint.setColor(COLOR_OUTER_RING);
 
         tickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         tickPaint.setStyle(Paint.Style.STROKE);
-        tickPaint.setStrokeWidth(1.5f);
+        tickPaint.setStrokeWidth(1.2f);
         tickPaint.setColor(COLOR_TICK);
 
         majorTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -93,42 +110,61 @@ public class CompassView extends View implements SensorEventListener {
         majorTickPaint.setStrokeWidth(2.5f);
         majorTickPaint.setColor(COLOR_MAJOR_TICK);
 
-        northPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        northPaint.setStyle(Paint.Style.FILL);
-        northPaint.setColor(COLOR_NORTH);
-
-        southPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        southPaint.setStyle(Paint.Style.FILL);
-        southPaint.setColor(COLOR_SOUTH);
-
-        qiblaPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        qiblaPaint.setStyle(Paint.Style.FILL);
-        qiblaPaint.setColor(COLOR_QIBLA);
-
-        centerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        centerPaint.setStyle(Paint.Style.FILL);
-        centerPaint.setColor(COLOR_CENTER);
-
         degreePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        degreePaint.setTextSize(28f);
+        degreePaint.setTextSize(22f);
         degreePaint.setColor(COLOR_DEGREE_TEXT);
-        degreePaint.setFakeBoldText(true);
+        degreePaint.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
 
-        bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        bgPaint.setStyle(Paint.Style.FILL);
-        bgPaint.setColor(COLOR_BG);
+        cardinalPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        cardinalPaint.setTextSize(38f);
+        cardinalPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
 
-        innerRingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        innerRingPaint.setStyle(Paint.Style.STROKE);
-        innerRingPaint.setStrokeWidth(2f);
-        innerRingPaint.setColor(COLOR_RING);
+        qiblaArrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        qiblaArrowPaint.setStyle(Paint.Style.FILL);
+        qiblaArrowPaint.setColor(COLOR_QIBLA_ARROW);
 
-        // Setup sensors
+        qiblaLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        qiblaLabelPaint.setTextSize(16f);
+        qiblaLabelPaint.setColor(COLOR_QIBLA_LABEL);
+        qiblaLabelPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+
+        crosshairPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        crosshairPaint.setStyle(Paint.Style.STROKE);
+        crosshairPaint.setStrokeWidth(1.5f);
+        crosshairPaint.setColor(COLOR_CROSSHAIR);
+
+        centerDotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        centerDotPaint.setStyle(Paint.Style.FILL);
+        centerDotPaint.setColor(COLOR_CENTER_DOT);
+
+        headingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        headingPaint.setTextSize(52f);
+        headingPaint.setColor(COLOR_HEADING_TEXT);
+        headingPaint.setTypeface(Typeface.create("sans-serif-thin", Typeface.NORMAL));
+        headingPaint.setFakeBoldText(true);
+
+        headingBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        headingBgPaint.setStyle(Paint.Style.FILL);
+        headingBgPaint.setColor(COLOR_HEADING_BG);
+
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager != null) {
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         }
+    }
+
+    public void setQiblaBearing(double bearing) {
+        this.qiblaBearing = bearing;
+        invalidate();
+    }
+
+    public double getQiblaBearing() {
+        return this.qiblaBearing;
+    }
+
+    public float getCurrentAzimuth() {
+        return currentAzimuth;
     }
 
     public void startSensors() {
@@ -166,24 +202,26 @@ public class CompassView extends View implements SensorEventListener {
 
                 targetAzimuth = azimuth;
 
-                // Smooth the rotation
                 float diff = targetAzimuth - smoothAzimuth;
                 if (diff > 180) diff -= 360;
                 if (diff < -180) diff += 360;
-                smoothAzimuth += diff * 0.2f;
+                smoothAzimuth += diff * 0.18f;
                 if (smoothAzimuth < 0) smoothAzimuth += 360;
                 if (smoothAzimuth >= 360) smoothAzimuth -= 360;
 
                 currentAzimuth = smoothAzimuth;
-                invalidate();
+
+                long now = System.currentTimeMillis();
+                if (now - lastInvalidateTime > 30) {
+                    lastInvalidateTime = now;
+                    invalidate();
+                }
             }
         }
     }
 
     @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // No-op
-    }
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -193,131 +231,137 @@ public class CompassView extends View implements SensorEventListener {
         int h = getHeight();
         float cx = w / 2f;
         float cy = h / 2f;
-        float radius = Math.min(cx, cy) - 16f;
+        float outerRadius = Math.min(cx, cy) - 20f;
+        float dialRadius = outerRadius - 30f;
 
         canvas.drawColor(COLOR_BG);
 
-        // Outer ring
-        canvas.drawCircle(cx, cy, radius, ringPaint);
-        // Inner ring
-        canvas.drawCircle(cx, cy, radius * 0.85f, innerRingPaint);
+        // Outer ring with gradient
+        RectF outerRect = new RectF(cx - outerRadius, cy - outerRadius, cx + outerRadius, cy + outerRadius);
+        LinearGradient ringGrad = new LinearGradient(cx, cy - outerRadius, cx, cy + outerRadius,
+                0xFF2C3E50, 0xFF1B2838, Shader.TileMode.CLAMP);
+        Paint ringFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ringFillPaint.setStyle(Paint.Style.FILL);
+        ringFillPaint.setShader(ringGrad);
+        canvas.drawOval(outerRect, ringFillPaint);
+        canvas.drawCircle(cx, cy, outerRadius, outerRingPaint);
 
-        // Draw degree marks and ticks (rotate with compass)
+        // Inner dial background
+        canvas.drawCircle(cx, cy, dialRadius, dialBgPaint);
+        canvas.drawCircle(cx, cy, dialRadius, innerRingPaint);
+
+        // Rotating elements - dial rotates opposite to azimuth (Redmi style)
         canvas.save();
         canvas.rotate(-currentAzimuth, cx, cy);
 
-        // Draw ticks every 10 degrees, major every 30
-        for (int deg = 0; deg < 360; deg += 10) {
-            float rad = (float) Math.toRadians(deg);
-            float innerR = radius * 0.85f;
-            float outerR = radius * 0.95f;
+        float tickOuter = dialRadius - 6f;
+        float tickInner = dialRadius - 16f;
+        float majorTickInner = dialRadius - 26f;
+        float cardinalY = dialRadius - 50f;
+        float degreeY = dialRadius - 48f;
 
-            if (deg % 30 == 0) {
-                float labelR = radius * 0.73f;
-                // Draw degree label
-                Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                labelPaint.setTextSize(18f);
-                labelPaint.setColor(COLOR_DEGREE_TEXT);
-                labelPaint.setTextAlign(Paint.Align.CENTER);
+        // Tick marks
+        for (int deg = 0; deg < 360; deg += 2) {
+            boolean isMajor = (deg % 30 == 0);
+            boolean isMid = (deg % 10 == 0) && !isMajor;
 
-                String label;
-                switch (deg) {
-                    case 0: label = "ش"; break;   // North
-                    case 90: label = "ق"; break;  // East
-                    case 180: label = "ج"; break; // South
-                    case 270: label = "غ"; break; // West
-                    default: label = String.valueOf(deg);
-                        labelPaint.setTextSize(14f);
-                        labelPaint.setColor(COLOR_TICK);
-                        break;
-                }
-                float lx = cx + labelR * (float) Math.sin(rad);
-                float ly = cy - labelR * (float) Math.cos(rad);
-                canvas.save();
-                canvas.rotate(deg, lx, ly);
-                canvas.drawText(label, lx, ly + 6, labelPaint);
-                canvas.restore();
-
-                // Major tick
-                canvas.drawLine(
-                    cx + innerR * (float) Math.sin(rad),
-                    cy - innerR * (float) Math.cos(rad),
-                    cx + outerR * (float) Math.sin(rad),
-                    cy - outerR * (float) Math.cos(rad),
-                    majorTickPaint
-                );
+            if (isMajor) {
+                canvas.drawLine(cx, cy - majorTickInner, cx, cy - tickOuter, majorTickPaint);
+            } else if (isMid) {
+                canvas.drawLine(cx, cy - tickInner, cx, cy - tickOuter, majorTickPaint);
             } else {
-                // Minor tick
-                float minorInner = radius * 0.88f;
-                canvas.drawLine(
-                    cx + minorInner * (float) Math.sin(rad),
-                    cy - minorInner * (float) Math.cos(rad),
-                    cx + outerR * (float) Math.sin(rad),
-                    cy - outerR * (float) Math.cos(rad),
-                    tickPaint
-                );
+                canvas.drawLine(cx, cy - tickInner, cx, cy - tickOuter, tickPaint);
             }
         }
 
-        // North indicator (triangle pointing up)
+        // Degree labels (every 30°, skip cardinals)
+        for (int deg = 0; deg < 360; deg += 30) {
+            if (deg % 90 != 0) {
+                canvas.save();
+                canvas.rotate(deg, cx, cy);
+                String label = String.valueOf(deg);
+                float textWidth = degreePaint.measureText(label);
+                canvas.drawText(label, cx - textWidth / 2, cy - degreeY, degreePaint);
+                canvas.restore();
+            }
+        }
+
+        // Cardinal directions
+        String[] cardinals = {"N", "E", "S", "W"};
+        String[] arabicLabels = {"شمال", "شرق", "جنوب", "غرب"};
+        int[] cardinalColors = {COLOR_NORTH, COLOR_EAST, COLOR_SOUTH, COLOR_WEST};
+
+        for (int i = 0; i < 4; i++) {
+            canvas.save();
+            canvas.rotate(i * 90, cx, cy);
+            cardinalPaint.setColor(cardinalColors[i]);
+            float textWidth = cardinalPaint.measureText(cardinals[i]);
+            canvas.drawText(cardinals[i], cx - textWidth / 2, cy - cardinalY, cardinalPaint);
+            canvas.restore();
+        }
+
+        // Qibla indicator on rotating dial
+        if (qiblaBearing > 0) {
+            canvas.save();
+            canvas.rotate((float) qiblaBearing, cx, cy);
+
+            // Qibla arrow pointing outward
+            Path qiblaPath = new Path();
+            float qBase = dialRadius - 2f;
+            float qTip = outerRadius - 2f;
+            qiblaPath.moveTo(cx - 9f, cy - qBase);
+            qiblaPath.lineTo(cx, cy - qTip);
+            qiblaPath.lineTo(cx + 9f, cy - qBase);
+            qiblaPath.close();
+            canvas.drawPath(qiblaPath, qiblaArrowPaint);
+
+            // Kaaba symbol (small filled square) at tip
+            Paint kaabaPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            kaabaPaint.setStyle(Paint.Style.FILL);
+            kaabaPaint.setColor(COLOR_QIBLA_ARROW);
+            float kaabaSize = 7f;
+            RectF kaabaRect = new RectF(cx - kaabaSize, cy - qTip - kaabaSize - 2f,
+                    cx + kaabaSize, cy - qTip + kaabaSize - 2f);
+            canvas.drawRect(kaabaRect, kaabaPaint);
+
+            canvas.restore();
+        }
+
+        canvas.restore(); // End rotation
+
+        // Fixed elements
+        // Fixed north indicator triangle at top of dial
+        Paint fixedNorthPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        fixedNorthPaint.setStyle(Paint.Style.FILL);
+        fixedNorthPaint.setColor(COLOR_NORTH);
         Path northPath = new Path();
-        float nTip = radius * 0.65f;
-        northPath.moveTo(cx, cy - nTip);
-        northPath.lineTo(cx - 10, cy - nTip + 24);
-        northPath.lineTo(cx + 10, cy - nTip + 24);
+        float nY = cy - dialRadius - 8f;
+        northPath.moveTo(cx - 10f, nY);
+        northPath.lineTo(cx, nY - 14f);
+        northPath.lineTo(cx + 10f, nY);
         northPath.close();
-        canvas.drawPath(northPath, northPaint);
+        canvas.drawPath(northPath, fixedNorthPaint);
 
-        // South indicator (triangle pointing down)
-        Path southPath = new Path();
-        southPath.moveTo(cx, cy + nTip);
-        southPath.lineTo(cx - 10, cy + nTip - 24);
-        southPath.lineTo(cx + 10, cy + nTip - 24);
-        southPath.close();
-        canvas.drawPath(southPath, southPaint);
+        // Crosshair at center
+        float crossSize = 28f;
+        crosshairPaint.setAlpha(120);
+        canvas.drawLine(cx - crossSize, cy, cx + crossSize, cy, crosshairPaint);
+        canvas.drawLine(cx, cy - crossSize, cx, cy + crossSize, crosshairPaint);
+        crosshairPaint.setAlpha(255);
 
-        // Center decorative ring
-        canvas.drawCircle(cx, cy, 8f, centerPaint);
+        // Center dot
+        canvas.drawCircle(cx, cy, 5f, centerDotPaint);
 
-        canvas.restore(); // End rotating section
-
-        // Draw Qibla indicator (fixed relative to device, moves opposite to compass)
-        // Qibla is at 248° from North, so on screen it appears at (QIBLA_BEARING - currentAzimuth)
-        float qiblaScreenAngle = (float) (QIBLA_BEARING - currentAzimuth);
-        float qiblaRad = (float) Math.toRadians(qiblaScreenAngle);
-
-        // Qibla needle (gold triangle)
-        Path qiblaPath = new Path();
-        float qTip = radius * 0.60f;
-        float qBase = radius * 0.35f;
-        float qiblaX = cx + qTip * (float) Math.sin(qiblaRad);
-        float qiblaY = cy - qTip * (float) Math.cos(qiblaRad);
-        float baseLX = cx + qBase * (float) Math.sin(qiblaRad - 0.08f);
-        float baseLY = cy - qBase * (float) Math.cos(qiblaRad - 0.08f);
-        float baseRX = cx + qBase * (float) Math.sin(qiblaRad + 0.08f);
-        float baseRY = cy - qBase * (float) Math.cos(qiblaRad + 0.08f);
-
-        qiblaPath.moveTo(qiblaX, qiblaY);
-        qiblaPath.lineTo(baseLX, baseLY);
-        qiblaPath.lineTo(baseRX, baseRY);
-        qiblaPath.close();
-        canvas.drawPath(qiblaPath, qiblaPaint);
-
-        // Qibla label (ك)
-        Paint qiblaLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        qiblaLabelPaint.setTextSize(16f);
-        qiblaLabelPaint.setColor(COLOR_QIBLA);
-        qiblaLabelPaint.setFakeBoldText(true);
-        qiblaLabelPaint.setTextAlign(Paint.Align.CENTER);
-        float qlR = radius * 0.30f;
-        float qlX = cx + qlR * (float) Math.sin(qiblaRad);
-        float qlY = cy - qlR * (float) Math.cos(qiblaRad);
-        canvas.drawText("🕋", qlX, qlY + 6, qiblaLabelPaint);
-
-        // Draw current heading text at bottom
-        String headingText = String.format(Locale.US, "%.0f°", currentAzimuth);
-        degreePaint.setTextSize(32f);
-        degreePaint.setColor(COLOR_MAJOR_TICK);
-        canvas.drawText(headingText, cx, cy + radius + 30, degreePaint);
+        // Heading display (fixed at top center, above dial)
+        String headingStr = String.format(Locale.US, "%.0f\u00B0", currentAzimuth);
+        float headingWidth = headingPaint.measureText(headingStr);
+        RectF headingRect = new RectF(
+                cx - headingWidth / 2 - 18f,
+                cy - outerRadius + 12f,
+                cx + headingWidth / 2 + 18f,
+                cy - outerRadius + 68f
+        );
+        canvas.drawRoundRect(headingRect, 10f, 10f, headingBgPaint);
+        canvas.drawText(headingStr, cx - headingWidth / 2, cy - outerRadius + 58f, headingPaint);
     }
 }
