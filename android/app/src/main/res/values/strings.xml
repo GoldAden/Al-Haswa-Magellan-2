@@ -953,4 +953,12 @@
     <!-- Track recording notification button: stops the recording and saves the recorded track. -->
     <string name="track_recording_stop_and_save">Stop and Save</string>
   <string name="north_arrow">Reset map to north</string>
+
+
+    <!-- Hawsa Magellan strings -->
+    <string name="hawsa_compass_title">البوصلة والقبلة</string>
+    <string name="hawsa_tides_title">المد والجزر</string>
+    <string name="hawsa_moon_title">القمر</string>
+    <string name="hawsa_wifi_connected">متصل</string>
+    <string name="hawsa_wifi_disconnected">غير متصل</string>
 </resources>
