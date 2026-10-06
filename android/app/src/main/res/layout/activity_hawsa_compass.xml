@@ -1,97 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#0c2340"
-    android:fillViewport="true">
+    android:background="#0D1B2A">
 
+    <!-- Fullscreen Compass View -->
+    <app.organicmaps.hawsa.CompassView
+        android:id="+id/compass_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="180dp" />
+
+    <!-- Top bar with back button and title -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:gravity="center_vertical"
+        android:background="#800D1B2A">
+        android:layout_gravity="top">
+
+        <ImageView
+            android:id="+id/btn_compass_back"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            android:contentDescription="@string/hawsa_compass_title"
+            android:tint="#D4AF37"
+            android:padding="4dp" />
+
+        <TextView
+            android:id="+id/tv_compass_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="20sp"
+            android:textColor="#D4AF37"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:paddingEnd="36dp" />
+    </LinearLayout>
+
+    <!-- Qibla direction info -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="170dp"
+        android:background="#B30D1B2A"
+        android:padding="10dp">
+
+        <TextView
+            android:id="+id/tv_qibla_direction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="15sp"
+            android:textColor="#D4AF37"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="+id/tv_qibla_degrees"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="#778DA9" />
+    </LinearLayout>
+
+    <!-- Prayer times panel at bottom -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:gravity="center_horizontal">
+        android:layout_gravity="bottom"
+        android:background="#E60D1B2A"
+        android:padding="16dp">
 
+        <!-- Prayer times header -->
         <TextView
-            android:id="@+id/tv_compass_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="24sp"
-            android:textColor="#E0E1DD"
+            android:text="\u0623\u0648\u0642\u0627\u062A \u0627\u0644\u0623\u0630\u0627\u0646"
+            android:textSize="17sp"
+            android:textColor="#D4AF37"
             android:textStyle="bold"
-            android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp" />
 
-        <androidx.cardview.widget.CardView
+        <LinearLayout
+            android:id="+id/prayer_times_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="#142e50"
-            xmlns:app="http://schemas.android.com/apk/res-auto">
+            android:orientation="vertical" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:padding="16dp">
-
-                <app.organicmaps.hawsa.CompassView
-                    android:id="@+id/compass_view"
-                    android:layout_width="280dp"
-                    android:layout_height="280dp" />
-
-                <TextView
-                    android:id="@+id/tv_qibla_direction"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="16sp"
-                    android:textColor="#E0E1DD"
-                    android:textStyle="bold"
-                    android:layout_marginTop="12dp" />
-
-                <TextView
-                    android:id="@+id/tv_qibla_degrees"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textColor="#778DA9"
-                    android:layout_marginBottom="8dp" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
+        <!-- Designer credit -->
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="#142e50"
-            xmlns:app="http://schemas.android.com/apk/res-auto">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="أوقات الأذان"
-                    android:textSize="18sp"
-                    android:textColor="#E0E1DD"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="12dp" />
-
-                <LinearLayout
-                    android:id="@+id/prayer_times_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
+            android:text="\u062A\u0645 \u062A\u0635\u0645\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0645\u0646 \u0642\u0628\u0644 \u0623\u0635\u064A\u0644 \u0635\u0627\u062F\u0642"
+            android:textSize="10sp"
+            android:textColor="#415A77"
+            android:layout_marginTop="8dp"
+            android:layout_gravity="center_horizontal" />
     </LinearLayout>
-</ScrollView>
+
+</FrameLayout>
