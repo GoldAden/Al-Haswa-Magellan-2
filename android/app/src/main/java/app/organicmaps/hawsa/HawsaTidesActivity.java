@@ -1,6 +1,7 @@
 package app.organicmaps.hawsa;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -166,6 +167,7 @@ public class HawsaTidesActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private void stopLocationUpdates() {
         if (locationManager != null) {
             try {
