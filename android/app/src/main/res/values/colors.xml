@@ -134,13 +134,4 @@
   <color name="ripple_search_action">#1F000000</color>
 
 
-  <!-- Hawsa theme colors -->
-  <color name="hawsa_bg_dark_navy">#FF0D1B2A</color>
-  <color name="hawsa_bg_card">#FF1E293B</color>
-  <color name="hawsa_gold">#FFD4AF37</color>
-  <color name="hawsa_text_light">#FFE0E1DD</color>
-  <color name="hawsa_text_muted">#FF778DA9</color>
-  <color name="hawsa_status_bar_color">#FF0c2340</color>
-  <color name="hawsa_bg_main">#FF0c2340</color>
-  <color name="hawsa_accent_gold">#FFD4AF37</color>
 </resources>
