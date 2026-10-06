@@ -80,7 +80,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Prayer times panel at bottom -->
+    <!-- Azan times panel at bottom -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -90,11 +90,11 @@
         android:padding="16dp"
         android:layoutDirection="rtl">
 
-        <!-- Prayer times header -->
+        <!-- Azan times header: أوقات الأذان (changed from أوقات الصلاة) -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/hawsa_prayer_times"
+            android:text="أوقات الأذان"
             android:textSize="17sp"
             android:textColor="#D4AF37"
             android:textStyle="bold"
