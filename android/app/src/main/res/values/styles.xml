@@ -469,4 +469,21 @@
     <item name="textAllCaps">false</item>
     <item name="android:textAllCaps">false</item>
   </style>
+
+  <!-- Hawsa AlertDialog - dark themed with gold accents -->
+  <style name="HawsaAlertDialog" parent="Theme.Material3.Dark.Dialog.Alert">
+    <item name="android:background">@color/hawsa_bg_card</item>
+    <item name="android:windowBackground">@color/hawsa_bg_card</item>
+    <item name="android:colorBackground">@color/hawsa_bg_card</item>
+    <item name="colorAccent">@color/hawsa_gold</item>
+    <item name="android:textColorPrimary">@color/hawsa_text_light</item>
+    <item name="android:textColorSecondary">@color/hawsa_text_muted</item>
+    <item name="buttonBarPositiveButtonStyle">@style/HawsaAlertDialogButton</item>
+    <item name="buttonBarNegativeButtonStyle">@style/HawsaAlertDialogButton</item>
+  </style>
+
+  <style name="HawsaAlertDialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+    <item name="android:textColor">@color/hawsa_gold</item>
+    <item name="android:textSize">14sp</item>
+  </style>
 </resources>

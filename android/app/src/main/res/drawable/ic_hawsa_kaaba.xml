@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Simplified Kaaba shape: cubic building with gold highlight -->
+    <path
+        android:fillColor="#D4AF37"
+        android:pathData="M4,8L12,4L20,8L20,18L12,20L4,18Z" />
+    <path
+        android:fillColor="#0A0E1A"
+        android:pathData="M5.5,8.8L12,5.5L18.5,8.8L18.5,17.2L12,19L5.5,17.2Z" />
+    <!-- Kiswa gold band -->
+    <path
+        android:fillColor="#D4AF37"
+        android:pathData="M7,10.5L12,8.2L17,10.5L17,11.5L12,9.2L7,11.5Z" />
+    <!-- Door -->
+    <path
+        android:fillColor="#D4AF37"
+        android:pathData="M10.5,14L10.5,16.5L12,17L13.5,16.5L13.5,14L12,13.5Z" />
+</vector>

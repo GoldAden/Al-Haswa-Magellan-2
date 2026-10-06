@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="20dp"
+    android:height="20dp"
+    android:viewportWidth="20"
+    android:viewportHeight="20">
+    <!-- Asr: afternoon / declining sun -->
+    <path
+        android:fillColor="#FB923C"
+        android:pathData="M10,5C12,5 13.5,7.2 13.5,10C13.5,12.8 12,15 10,15C8,15 6.5,12.8 6.5,10C6.5,7.2 8,5 10,5Z" />
+    <path
+        android:fillColor="#FB923C"
+        android:pathData="M16,13L15.5,11L17,12Z" />
+</vector>

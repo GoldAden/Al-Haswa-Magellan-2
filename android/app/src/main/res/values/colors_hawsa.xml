@@ -54,6 +54,14 @@
     <color name="hawsa_tide_current_indicator">#D4AF37</color>
     <color name="hawsa_tide_label_high">#D4AF37</color>
     <color name="hawsa_tide_label_low">#778DA9</color>
+    <color name="hawsa_tide_rising">#10B981</color>
+    <color name="hawsa_tide_falling">#EF4444</color>
+    <color name="hawsa_tide_high_marker">#10B981</color>
+    <color name="hawsa_tide_low_marker">#EF4444</color>
+    <color name="hawsa_tide_fill_top">#40D4AF37</color>
+    <color name="hawsa_tide_fill_bottom">#100F172A</color>
+    <color name="hawsa_tide_grid">#25334155</color>
+    <color name="hawsa_tide_now_label">#D4AF37</color>
 
     <!-- Day button colors -->
     <color name="hawsa_day_button_normal">#1B263B</color>
@@ -65,4 +73,17 @@
     <color name="hawsa_hijri_section_title">#D4AF37</color>
     <color name="hawsa_hijri_card_bg">#142e50</color>
     <color name="hawsa_hijri_separator">#40D4AF37</color>
+
+    <!-- Redesigned tide activity -->
+    <color name="hawsa_bg_dark">#0F172A</color>
+    <color name="hawsa_card_surface">#111827</color>
+    <color name="hawsa_card_stroke">#1E293B</color>
+    <color name="hawsa_text_secondary">#64748B</color>
+    <color name="hawsa_text_tertiary">#334155</color>
+    <color name="hawsa_tide_badge_rising_bg">#2010B981</color>
+    <color name="hawsa_tide_badge_falling_bg">#20EF4444</color>
+    <color name="hawsa_selected_day_bg">#D4AF37</color>
+    <color name="hawsa_unselected_day_bg">#1E293B</color>
+    <color name="hawsa_weekly_card_selected_bg">#20D4AF37</color>
+    <color name="hawsa_weekly_card_normal_bg">#111827</color>
 </resources>

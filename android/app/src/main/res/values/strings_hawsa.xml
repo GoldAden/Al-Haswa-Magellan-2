@@ -65,4 +65,31 @@
 
     <!-- Common -->
     <string name="hawsa_designer_credit">تم تصميم هذا التطبيق من قبل أصيل صادق</string>
+    <string name="hawsa_back">رجوع</string>
+    <string name="hawsa_enable_gps">تفعيل الموقع</string>
+    <string name="hawsa_gps_required_message">يجب تفعيل خدمة الموقع (GPS) لحساب المد والجزربدقة بناء على أقرب محطة بحرية. هل تريد الذهاب إلى الإعدادات؟</string>
+    <string name="hawsa_open_settings">فتح الإعدادات</string>
+    <string name="hawsa_cancel">إلغاء</string>
+    <string name="hawsa_tide_chart_label">رسم بيانيا للمد والجزر</string>
+    <string name="hawsa_weekly_forecast">توقعات أسبوعية</string>
+    <string name="hawsa_tide_rising">مد ↑</string>
+    <string name="hawsa_tide_falling">جزر ↓</string>
+    <string name="hawsa_tide_high">مد عالي</string>
+    <string name="hawsa_tide_low">جزر منخفض</string>
+    <string name="hawsa_station">محطة</string>
+    <string name="hawsa_today">اليوم</string>
+    <string name="hawsa_location_permission_denied">يجب تفعيل إذن الموقع لحساب المد والجزربدقة</string>
+
+    <!-- Compass additions -->
+    <string name="hawsa_compass_immersive">وضع شامل</string>
+    <string name="hawsa_qibla_kaaba">الكعبة المشرفة</string>
+    <string name="hawsa_qibla_from_north">%.0f° من الشمال</string>
+    <string name="hawsa_direction_north">ش</string>
+    <string name="hawsa_direction_south">ج</string>
+    <string name="hawsa_direction_east">شق</string>
+    <string name="hawsa_direction_west">غ</string>
+    <string name="hawsa_direction_northeast">ششق</string>
+    <string name="hawsa_direction_northwest">شغ</string>
+    <string name="hawsa_direction_southeast">جشق</string>
+    <string name="hawsa_direction_southwest">جغ</string>
 </resources>
