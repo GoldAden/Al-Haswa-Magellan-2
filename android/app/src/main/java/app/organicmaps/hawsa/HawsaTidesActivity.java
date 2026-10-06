@@ -1,18 +1,28 @@
 package app.organicmaps.hawsa;
 
-import android.content.pm.ActivityInfo;
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.HorizontalScrollView;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.ScrollView;
+import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
@@ -22,240 +32,365 @@ import app.organicmaps.R;
 
 public class HawsaTidesActivity extends AppCompatActivity {
 
-    private TideChartView tideChart;
-    private LinearLayout weeklyContainer;
-    private LinearLayout dayButtonsContainer;
-    private Calendar selectedDay;
+    private TideChartView tideChartView;
+    private LinearLayout dayButtonContainer;
+    private LinearLayout weeklyTidesContainer;
+    private TextView tvTidesTitle;
+    private TextView tvTidesLocation;
 
-    private static final String[] ARABIC_DAYS = {
-        "الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"
-    };
+    private LocationManager locationManager;
+    private static final int LOCATION_PERMISSION_REQUEST = 1002;
+    private static final String PREFS_NAME = "hawsa_tides_prefs";
+    private static final String KEY_LAT = "last_lat";
+    private static final String KEY_LON = "last_lon";
 
-    private static final String[] ARABIC_MONTHS = {
-        "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
-        "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+    private boolean locationAcquired = false;
+    private int selectedDayOffset = 0;
+
+    private final LocationListener locationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(@NonNull Location location) {
+            saveLocation(location);
+            locationAcquired = true;
+            TideCalculator.setUserLocation(location.getLatitude(), location.getLongitude());
+            updateLocationDisplay();
+            refreshTideData();
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            requestLocationUpdates();
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            showGPSPrompt();
+        }
     };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Window setup
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             getWindow().setDecorFitsSystemWindows(true);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(ContextCompat.getColor(this, R.color.hawsa_status_bar_color));
-        }
-
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_hawsa_tides);
 
-        // Title
-        TextView tvTitle = findViewById(R.id.tv_tides_title);
-        if (tvTitle != null) tvTitle.setText(R.string.hawsa_tides_title);
+        tvTidesTitle = findViewById(R.id.tv_tides_title);
+        tvTidesLocation = findViewById(R.id.tv_tides_location);
+        tideChartView = findViewById(R.id.tide_chart);
+        dayButtonContainer = findViewById(R.id.day_button_container);
+        weeklyTidesContainer = findViewById(R.id.weekly_tides_container);
 
-        // Location subtitle - hidden
-        TextView tvLocation = findViewById(R.id.tv_tides_location);
-        if (tvLocation != null) tvLocation.setVisibility(View.GONE);
+        if (tvTidesTitle != null) tvTidesTitle.setText(R.string.hawsa_tides_title);
 
-        // Tide chart
-        tideChart = findViewById(R.id.tide_chart);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        // Day buttons
-        dayButtonsContainer = findViewById(R.id.day_button_container);
-        if (dayButtonsContainer == null) {
-            dayButtonsContainer = new LinearLayout(this);
-            dayButtonsContainer.setOrientation(LinearLayout.HORIZONTAL);
-            dayButtonsContainer.setPadding(0, 16, 0, 0);
-            LinearLayout chartParent = (LinearLayout) tideChart.getParent().getParent();
-            chartParent.addView(dayButtonsContainer);
-        }
+        // Try to load saved location first
+        loadSavedLocation();
 
-        // Weekly container
-        weeklyContainer = findViewById(R.id.weekly_tides_container);
-        if (weeklyContainer == null) {
-            weeklyContainer = new LinearLayout(this);
-            weeklyContainer.setOrientation(LinearLayout.VERTICAL);
-            ScrollView parent = (ScrollView) tideChart.getParent().getParent().getParent().getParent();
-            LinearLayout root = (LinearLayout) parent.getChildAt(0);
-            root.addView(weeklyContainer);
-        }
+        // Check location permission and request GPS
+        checkLocationAndRequest();
 
-        // Initialize with today
-        selectedDay = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
-        updateChart();
-        createDayButtons();
-        buildWeeklySummary();
+        // Build initial day buttons and tide data
+        buildDayButtons();
+        refreshTideData();
     }
 
-    private void createDayButtons() {
-        dayButtonsContainer.removeAllViews();
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (locationAcquired) {
+            requestLocationUpdates();
+        }
+    }
 
-        int todayDow = cal.get(Calendar.DAY_OF_WEEK) - 1; // 0=Sun
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopLocationUpdates();
+    }
+
+    private void checkLocationAndRequest() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                    }, LOCATION_PERMISSION_REQUEST);
+        } else {
+            if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                requestLocationUpdates();
+            } else {
+                showGPSPrompt();
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                    requestLocationUpdates();
+                } else {
+                    showGPSPrompt();
+                }
+            } else {
+                Toast.makeText(this, "\u064A\u062C\u0628 \u062A\u0641\u0639\u064A\u0644 \u0625\u0630\u0646 \u0627\u0644\u0645\u0648\u0642\u0639 \u0644\u062D\u0633\u0627\u0628 \u0627\u0644\u0645\u062F \u0648\u0627\u0644\u062C\u0632\u0631 \u0628\u062F\u0642\u0629",
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void requestLocationUpdates() {
+        if (locationManager == null) return;
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            try {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                        10000, 10, locationListener);
+                locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                        10000, 10, locationListener);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void stopLocationUpdates() {
+        if (locationManager != null) {
+            try {
+                locationManager.removeUpdates(locationListener);
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void saveLocation(Location location) {
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .edit()
+                .putFloat(KEY_LAT, (float) location.getLatitude())
+                .putFloat(KEY_LON, (float) location.getLongitude())
+                .apply();
+    }
+
+    private void loadSavedLocation() {
+        float savedLat = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .getFloat(KEY_LAT, Float.MIN_VALUE);
+        float savedLon = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+                .getFloat(KEY_LON, Float.MIN_VALUE);
+
+        if (savedLat != Float.MIN_VALUE && savedLon != Float.MIN_VALUE) {
+            TideCalculator.setUserLocation(savedLat, savedLon);
+            locationAcquired = true;
+            updateLocationDisplay();
+        }
+    }
+
+    private void updateLocationDisplay() {
+        if (tvTidesLocation != null) {
+            String stationName = TideCalculator.getStationNameAr();
+            tvTidesLocation.setText("\u0645\u062D\u0637\u0629: " + stationName);
+        }
+    }
+
+    private void showGPSPrompt() {
+        new AlertDialog.Builder(this)
+                .setTitle("\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0648\u0642\u0639")
+                .setMessage("\u064A\u062C\u0628 \u062A\u0641\u0639\u064A\u0644 \u062E\u062F\u0645\u0629 \u0627\u0644\u0645\u0648\u0642\u0639 (GPS) \u0644\u062D\u0633\u0627\u0628 \u0627\u0644\u0645\u062F \u0648\u0627\u0644\u062C\u0632\u0631 \u0628\u062F\u0642\u0629 \u0628\u0646\u0627\u0621 \u0639\u0644\u0649 \u0645\u0648\u0642\u0639\u0643. \u0647\u0644 \u062A\u0631\u064A\u062F \u0627\u0644\u0630\u0647\u0627\u0628 \u0625\u0644\u0649 \u0625\u0639\u062F\u0627\u062F\u0627\u062A \u0627\u0644\u0645\u0648\u0642\u0639\u061F")
+                .setPositiveButton("\u0641\u062A\u062D \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A", (dialog, which) -> {
+                    try {
+                        startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    } catch (Exception ignored) {}
+                })
+                .setNegativeButton("\u0625\u0644\u063A\u0627\u0621", null)
+                .setCancelable(false)
+                .show();
+    }
+
+    private void buildDayButtons() {
+        if (dayButtonContainer == null) return;
+        dayButtonContainer.removeAllViews();
+
+        // Day names not used - using arabicDays array below instead
+
+        // Actually let's use proper day offsets
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("E dd", Locale.getDefault());
 
         for (int i = 0; i < 7; i++) {
-            TextView btn = new TextView(this);
-            String dayName = ARABIC_DAYS[(todayDow + i) % 7];
-            btn.setText(dayName);
-            btn.setTextSize(14);
-            btn.setPadding(24, 12, 24, 12);
-            btn.setAllCaps(false);
-
+            Button btn = new Button(this);
             if (i == 0) {
-                btn.setTextColor(0xFF4FC3F7); // Selected color
-                btn.setBackgroundResource(R.drawable.hawsa_day_button_selected);
+                btn.setText("\u0627\u0644\u064A\u0648\u0645");
             } else {
-                btn.setTextColor(0xFF778DA9);
-                btn.setBackgroundResource(R.drawable.hawsa_day_button);
+                Calendar offset = (Calendar) cal.clone();
+                offset.add(Calendar.DAY_OF_MONTH, i);
+                String[] arabicDays = {"\u0627\u0644\u0623\u062D\u062F", "\u0627\u0644\u0627\u062B\u0646\u064A\u0646", "\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621", "\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621", "\u0627\u0644\u062E\u0645\u064A\u0633", "\u0627\u0644\u062C\u0645\u0639\u0629", "\u0627\u0644\u0633\u0628\u062A"};
+                int dayOfWeek = offset.get(Calendar.DAY_OF_WEEK) - 1;
+                btn.setText(arabicDays[dayOfWeek]);
             }
-
+            btn.setTextSize(12);
+            btn.setTextColor(i == selectedDayOffset ? 0xFF4FC3F7 : 0xFF778DA9);
+            btn.setBackgroundColor(i == selectedDayOffset ? 0x404FC3F7 : 0x00000000);
             final int dayOffset = i;
             btn.setOnClickListener(v -> {
-                selectedDay = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
-                selectedDay.add(Calendar.DAY_OF_MONTH, dayOffset);
-                updateChart();
-                updateButtonSelection(dayOffset);
+                selectedDayOffset = dayOffset;
+                buildDayButtons();
+                refreshTideData();
             });
 
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             );
-            params.setMargins(8, 0, 8, 0);
-            dayButtonsContainer.addView(btn, params);
+            params.setMargins(4, 0, 4, 0);
+            btn.setLayoutParams(params);
+            dayButtonContainer.addView(btn);
         }
     }
 
-    private void updateButtonSelection(int selectedOffset) {
-        for (int i = 0; i < dayButtonsContainer.getChildCount(); i++) {
-            TextView btn = (TextView) dayButtonsContainer.getChildAt(i);
-            if (i == selectedOffset) {
-                btn.setTextColor(0xFF4FC3F7);
-                btn.setBackgroundResource(R.drawable.hawsa_day_button_selected);
-            } else {
-                btn.setTextColor(0xFF778DA9);
-                btn.setBackgroundResource(R.drawable.hawsa_day_button);
-            }
-        }
-    }
+    private void refreshTideData() {
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+        cal.add(Calendar.DAY_OF_MONTH, selectedDayOffset);
 
-    private void updateChart() {
-        if (tideChart == null) return;
-        Calendar day = (Calendar) selectedDay.clone();
-        List<TideCalculator.TidePoint> points = TideCalculator.getDayTidePoints(day);
-        List<TideCalculator.TideEvent> events = TideCalculator.getDayTideEvents(day);
-        tideChart.setDayData(day, points, events);
+        List<TideCalculator.TidePoint> points = TideCalculator.getDayTidePoints(cal);
+        List<TideCalculator.TideEvent> events = TideCalculator.getDayTideEvents(cal);
+
+        if (tideChartView != null) {
+            tideChartView.setDayData(cal, points, events);
+        }
+
+        buildWeeklySummary();
     }
 
     private void buildWeeklySummary() {
-        if (weeklyContainer == null) return;
-        weeklyContainer.removeAllViews();
+        if (weeklyTidesContainer == null) return;
+        weeklyTidesContainer.removeAllViews();
 
-        List<TideCalculator.DayTideSummary> weekly = TideCalculator.getWeeklySummary();
+        List<TideCalculator.DayTideSummary> summary = TideCalculator.getWeeklySummary();
 
-        for (int i = 0; i < weekly.size(); i++) {
-            TideCalculator.DayTideSummary day = weekly.get(i);
-            View row = createDayRow(day, i);
-            weeklyContainer.addView(row);
-        }
-    }
+        for (int i = 0; i < summary.size(); i++) {
+            TideCalculator.DayTideSummary day = summary.get(i);
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(8, 8, 8, 8);
 
-    private View createDayRow(TideCalculator.DayTideSummary day, int index) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setPadding(0, 12, 0, 12);
-        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            if (i == selectedDayOffset) {
+                row.setBackgroundColor(0x204FC3F7);
+            }
 
-        // Day name
-        int dow = day.date.get(Calendar.DAY_OF_WEEK) - 1;
-        String dayName = ARABIC_DAYS[dow];
-        String dateStr = day.date.get(Calendar.DAY_OF_MONTH) + " " + ARABIC_MONTHS[day.date.get(Calendar.MONTH)];
+            // Day header
+            String[] arabicDays = {"\u0627\u0644\u0623\u062D\u062F", "\u0627\u0644\u0627\u062B\u0646\u064A\u0646", "\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621", "\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621", "\u0627\u0644\u062E\u0645\u064A\u0633", "\u0627\u0644\u062C\u0645\u0639\u0629", "\u0627\u0644\u0633\u0628\u062A"};
+            int dayOfWeek = day.date.get(Calendar.DAY_OF_WEEK) - 1;
+            SimpleDateFormat dateFmt = new SimpleDateFormat("dd/MM", Locale.getDefault());
 
-        // Left side: Day name + date
-        LinearLayout leftInfo = new LinearLayout(this);
-        leftInfo.setOrientation(LinearLayout.VERTICAL);
-        leftInfo.setPadding(0, 0, 24, 0);
+            TextView tvDay = new TextView(this);
+            tvDay.setText(arabicDays[dayOfWeek] + " " + dateFmt.format(day.date.getTime()));
+            tvDay.setTextSize(14);
+            tvDay.setTextColor(0xFFE0E1DD);
+            tvDay.getPaint().setFakeBoldText(true);
+            row.addView(tvDay);
 
-        TextView tvDay = new TextView(this);
-        tvDay.setText(dayName);
-        tvDay.setTextSize(16);
-        tvDay.setTextColor(0xFFE0E1DD);
-        tvDay.getPaint().setFakeBoldText(true);
-        leftInfo.addView(tvDay);
+            // High tides
+            LinearLayout highsRow = new LinearLayout(this);
+            highsRow.setOrientation(LinearLayout.HORIZONTAL);
+            highsRow.setPadding(0, 4, 0, 0);
 
-        TextView tvDate = new TextView(this);
-        tvDate.setText(dateStr);
-        tvDate.setTextSize(12);
-        tvDate.setTextColor(0xFF778DA9);
-        leftInfo.addView(tvDate);
+            TextView tvHighLabel = new TextView(this);
+            tvHighLabel.setText("\u0645\u062F \u0639\u0627\u0644\u064A: ");
+            tvHighLabel.setTextSize(12);
+            tvHighLabel.setTextColor(0xFF4CAF50);
+            highsRow.addView(tvHighLabel);
 
-        row.addView(leftInfo);
+            if (day.firstHigh != null) {
+                TextView tvH1 = new TextView(this);
+                tvH1.setText(formatEventTime(day.firstHigh) + " (" + String.format(Locale.US, "%.1f\u0645", day.firstHigh.height) + ")");
+                tvH1.setTextSize(12);
+                tvH1.setTextColor(0xFF4CAF50);
+                highsRow.addView(tvH1);
+            }
+            if (day.secondHigh != null) {
+                TextView tvSep = new TextView(this);
+                tvSep.setText(" | ");
+                tvSep.setTextSize(12);
+                tvSep.setTextColor(0xFF415A77);
+                highsRow.addView(tvSep);
+                TextView tvH2 = new TextView(this);
+                tvH2.setText(formatEventTime(day.secondHigh) + " (" + String.format(Locale.US, "%.1f\u0645", day.secondHigh.height) + ")");
+                tvH2.setTextSize(12);
+                tvH2.setTextColor(0xFF4CAF50);
+                highsRow.addView(tvH2);
+            }
+            row.addView(highsRow);
 
-        // Right side: High and Low times
-        LinearLayout rightInfo = new LinearLayout(this);
-        rightInfo.setOrientation(LinearLayout.VERTICAL);
+            // Low tides
+            LinearLayout lowsRow = new LinearLayout(this);
+            lowsRow.setOrientation(LinearLayout.HORIZONTAL);
+            lowsRow.setPadding(0, 2, 0, 0);
 
-        // High tides
-        if (day.firstHigh != null) {
-            TextView tvH1 = new TextView(this);
-            tvH1.setText("مد " + formatEventTime(day.firstHigh) + "  " + String.format(Locale.US, "%.1fم", day.firstHigh.height));
-            tvH1.setTextSize(13);
-            tvH1.setTextColor(0xFF4CAF50);
-            rightInfo.addView(tvH1);
-        }
-        if (day.secondHigh != null) {
-            TextView tvH2 = new TextView(this);
-            tvH2.setText("مد " + formatEventTime(day.secondHigh) + "  " + String.format(Locale.US, "%.1fم", day.secondHigh.height));
-            tvH2.setTextSize(13);
-            tvH2.setTextColor(0xFF4CAF50);
-            rightInfo.addView(tvH2);
-        }
+            TextView tvLowLabel = new TextView(this);
+            tvLowLabel.setText("\u0645\u062F \u0645\u0646\u062E\u0641\u0636: ");
+            tvLowLabel.setTextSize(12);
+            tvLowLabel.setTextColor(0xFFFF5722);
+            lowsRow.addView(tvLowLabel);
 
-        // Low tides
-        if (day.firstLow != null) {
-            TextView tvL1 = new TextView(this);
-            tvL1.setText("جزر " + formatEventTime(day.firstLow) + "  " + String.format(Locale.US, "%.1fم", day.firstLow.height));
-            tvL1.setTextSize(13);
-            tvL1.setTextColor(0xFFFF5722);
-            rightInfo.addView(tvL1);
-        }
-        if (day.secondLow != null) {
-            TextView tvL2 = new TextView(this);
-            tvL2.setText("جزر " + formatEventTime(day.secondLow) + "  " + String.format(Locale.US, "%.1fم", day.secondLow.height));
-            tvL2.setTextSize(13);
-            tvL2.setTextColor(0xFFFF5722);
-            rightInfo.addView(tvL2);
-        }
+            if (day.firstLow != null) {
+                TextView tvL1 = new TextView(this);
+                tvL1.setText(formatEventTime(day.firstLow) + " (" + String.format(Locale.US, "%.1f\u0645", day.firstLow.height) + ")");
+                tvL1.setTextSize(12);
+                tvL1.setTextColor(0xFFFF5722);
+                lowsRow.addView(tvL1);
+            }
+            if (day.secondLow != null) {
+                TextView tvSep2 = new TextView(this);
+                tvSep2.setText(" | ");
+                tvSep2.setTextSize(12);
+                tvSep2.setTextColor(0xFF415A77);
+                lowsRow.addView(tvSep2);
+                TextView tvL2 = new TextView(this);
+                tvL2.setText(formatEventTime(day.secondLow) + " (" + String.format(Locale.US, "%.1f\u0645", day.secondLow.height) + ")");
+                tvL2.setTextSize(12);
+                tvL2.setTextColor(0xFFFF5722);
+                lowsRow.addView(tvL2);
+            }
+            row.addView(lowsRow);
 
-        row.addView(rightInfo);
+            // Separator
+            if (i < summary.size() - 1) {
+                View separator = new View(this);
+                separator.setBackgroundColor(0xFF415A77);
+                LinearLayout.LayoutParams sepParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 1
+                );
+                sepParams.setMargins(0, 12, 0, 0);
+                separator.setLayoutParams(sepParams);
+                row.addView(separator);
+            }
 
-        // Separator line
-        if (index < 6) {
-            View separator = new View(this);
-            separator.setBackgroundColor(0xFF415A77);
-            LinearLayout.LayoutParams sepParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 1
+            LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
             );
-            sepParams.setMargins(0, 12, 0, 0);
-            row.addView(separator);
+            row.setLayoutParams(rowParams);
+            weeklyTidesContainer.addView(row);
         }
-
-        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        row.setLayoutParams(rowParams);
-        return row;
     }
 
     private String formatEventTime(TideCalculator.TideEvent event) {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
         cal.setTimeInMillis(event.timeMillis);
-        return MoonCalculator.formatTimeAmPm(cal);
+        int h = cal.get(Calendar.HOUR);
+        if (h == 0) h = 12;
+        int m = cal.get(Calendar.MINUTE);
+        String ap = cal.get(Calendar.AM_PM) == Calendar.AM ? "\u0635" : "\u0645";
+        return String.format(Locale.US, "%d:%02d%s", h, m, ap);
     }
 }
