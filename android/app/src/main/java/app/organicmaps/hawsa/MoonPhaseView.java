@@ -341,91 +341,66 @@ public class MoonPhaseView extends View {
 
     private void drawTerminator(Canvas canvas, float radius, float scale) {
         // Phase: 0=new (all dark), 0.25=first quarter, 0.5=full (all lit), 0.75=last quarter, 1.0=new
+        // Uses unified terminator geometry: the terminator is an ellipse whose
+        // semi-minor axis varies linearly from -r (new) through 0 (quarter) to +r (full).
+        // This produces physically realistic crescent, quarter, gibbous, and full shapes.
         float p = animatedPhase;
 
-        // The terminator line position
-        float terminatorX;
+        // Compute terminator X offset: -r at new moon, 0 at quarter, +r at full moon
+        // For waxing (p=0..0.5): terminatorX = r * (2*p - 1)
+        // For waning (p=0.5..1): terminatorX = r * (1 - 2*(p-0.5)) = r * (2 - 2*p)
+        double terminatorX = radius * (2.0 * p - 1.0);  // works for full 0..1 range
+        boolean isWaxing = p <= 0.5;
 
+        // Illumination from phase (for edge cases)
+        double illum = 0.5 * (1.0 - Math.cos(2.0 * Math.PI * p));
+
+        if (illum >= 0.99) {
+            // Full moon — all lit, no dark overlay
+            return;
+        } else if (illum <= 0.01) {
+            // New moon — all dark
+            paintMoonDark.setAlpha((int)(255 * scale));
+            canvas.drawCircle(viewCenterX, viewCenterY, radius, paintMoonDark);
+            return;
+        }
+
+        // Build the dark (shadow) path using terminator arc + limb arc
         Path darkPath = new Path();
 
-        if (p <= 0.5f) {
-            // Waxing: right side lit, dark moves from right to left
-            // At p=0, full dark; at p=0.25, first quarter (right half lit); at p=0.5, full moon
+        // The dark side is opposite to the lit side:
+        // Waxing: right side lit → left side dark → left limb + terminator
+        // Waning: left side lit → right side dark → right limb + terminator
 
-            // Dark path covers the left portion
-            darkPath.moveTo(viewCenterX, viewCenterY - radius);
+        darkPath.moveTo(viewCenterX, viewCenterY - radius);
 
-            if (p < 0.25f) {
-                // Crescent: terminator curves inward on right side of center
-                float curvature = (0.25f - p) / 0.25f; // 1 at new, 0 at quarter
-                terminatorX = viewCenterX + radius * curvature;
-
-                // Right arc (lit edge)
-                darkPath.arcTo(
-                    viewCenterX - radius, viewCenterY - radius,
-                    viewCenterX + radius, viewCenterY + radius,
-                    -90, -180, true
-                );
-                // Terminator curve (elliptical approximation)
-                float curveX = viewCenterX + radius * (1 - 2 * p / 0.5f);
-                for (float angle = 90; angle >= -90; angle -= 5) {
-                    float y = viewCenterY + radius * (float) Math.sin(Math.toRadians(angle));
-                    float x = viewCenterX + radius * (1 - 2 * p / 0.5f) * (float) Math.cos(Math.toRadians(angle));
-                    darkPath.lineTo(x, y);
-                }
-            } else {
-                // Gibbous: terminator on left side of center
-                darkPath.arcTo(
-                    viewCenterX - radius, viewCenterY - radius,
-                    viewCenterX + radius, viewCenterY + radius,
-                    -90, -180, true
-                );
-                float curveFactor = (p - 0.25f) / 0.25f; // 0 at quarter, 1 at full
-                for (float angle = 90; angle >= -90; angle -= 5) {
-                    float y = viewCenterY + radius * (float) Math.sin(Math.toRadians(angle));
-                    float x = viewCenterX - radius * curveFactor * (float) Math.cos(Math.toRadians(angle));
-                    darkPath.lineTo(x, y);
-                }
-            }
-
-            darkPath.close();
-
+        // Walk along the dark limb from top to bottom
+        int steps = 40;
+        if (isWaxing) {
+            // Dark limb is the LEFT side (arc from -90° to +90° going counter-clockwise = 180° sweep left)
+            darkPath.arcTo(
+                viewCenterX - radius, viewCenterY - radius,
+                viewCenterX + radius, viewCenterY + radius,
+                -90, -180, true
+            );
         } else {
-            // Waning: left side lit, dark moves from left to right
-            float wp = p - 0.5f; // 0 at full, 0.5 at new
-
-            darkPath.moveTo(viewCenterX, viewCenterY - radius);
-
-            if (wp < 0.25f) {
-                // Waning gibbous: most still lit, terminator moves left-to-center
-                darkPath.arcTo(
-                    viewCenterX - radius, viewCenterY - radius,
-                    viewCenterX + radius, viewCenterY + radius,
-                    -90, 180, false
-                );
-                float curveFactor = wp / 0.25f; // 0 at full, 1 at third quarter
-                for (float angle = 90; angle >= -90; angle -= 5) {
-                    float y = viewCenterY + radius * (float) Math.sin(Math.toRadians(angle));
-                    float x = viewCenterX - radius * (1 - curveFactor) * (float) Math.cos(Math.toRadians(angle));
-                    darkPath.lineTo(x, y);
-                }
-            } else {
-                // Waning crescent: left side lit
-                darkPath.arcTo(
-                    viewCenterX - radius, viewCenterY - radius,
-                    viewCenterX + radius, viewCenterY + radius,
-                    -90, 180, false
-                );
-                float curveFactor = 1 - (wp - 0.25f) / 0.25f; // 1 at third quarter, 0 at new
-                for (float angle = 90; angle >= -90; angle -= 5) {
-                    float y = viewCenterY + radius * (float) Math.sin(Math.toRadians(angle));
-                    float x = viewCenterX - radius * curveFactor * (float) Math.cos(Math.toRadians(angle));
-                    darkPath.lineTo(x, y);
-                }
-            }
-
-            darkPath.close();
+            // Dark limb is the RIGHT side (arc from -90° to +90° going clockwise = 180° sweep right)
+            darkPath.arcTo(
+                viewCenterX - radius, viewCenterY - radius,
+                viewCenterX + radius, viewCenterY + radius,
+                -90, 180, false
+            );
         }
+
+        // Walk along the terminator from bottom back to top
+        for (int i = steps; i >= 0; i--) {
+            float angle = -90f + (180f * i / steps);  // -90 to 90 (bottom to top)
+            float y = viewCenterY + radius * (float) Math.sin(Math.toRadians(angle));
+            float xTerminator = viewCenterX + (float) (terminatorX * Math.cos(Math.toRadians(angle)));
+            darkPath.lineTo(xTerminator, y);
+        }
+
+        darkPath.close();
 
         paintMoonDark.setAlpha((int)(230 * scale));
         canvas.drawPath(darkPath, paintMoonDark);
