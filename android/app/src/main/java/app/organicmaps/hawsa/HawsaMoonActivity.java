@@ -372,9 +372,12 @@ public class HawsaMoonActivity extends AppCompatActivity {
         return col;
     }
 
-    @SuppressLint("ViewConstructor")
-    private View createDayMoonIcon(final float phase, final float illumination, final boolean isToday) {
-        // Small moon icon — draw using a custom mini view
+    /**
+     * Create a small realistic moon phase icon for the weekly strip.
+     * Uses proper terminator geometry (elliptical approximation) to show
+     * crescents, quarter moons, gibbous, and full/new phases realistically.
+     */
+    private View createDayMoonIcon(final float phaseFraction, final float illumination, final boolean isToday) {
         View icon = new View(this) {
             @Override
             protected void onDraw(Canvas canvas) {
@@ -393,35 +396,58 @@ public class HawsaMoonActivity extends AppCompatActivity {
                 darkPaint.setColor(0xFF1E293B);
                 darkPaint.setStyle(Paint.Style.FILL);
 
-                // Full circle lit
-                canvas.drawCircle(cx, cy, r, litPaint);
+                // Draw full dark circle first (shadow side)
+                canvas.drawCircle(cx, cy, r, darkPaint);
 
-                // Dark overlay for phase
-                Path darkPath = new Path();
-                float p = phase;
-                float curveFactor;
-                if (p <= 0.5f) {
-                    curveFactor = 1 - 2 * p;
+                // Draw the lit portion using proper terminator geometry
+                // phaseFraction: 0 = new moon, 0.5 = full moon, 1 = back to new
+                double terminatorX;
+                boolean isWaxing = phaseFraction <= 0.5;
+
+                if (isWaxing) {
+                    // terminatorX goes from -r (new) to +r (full)
+                    terminatorX = r * (2.0 * phaseFraction - 1.0);
                 } else {
-                    curveFactor = 2 * p - 1;
+                    // waning: terminatorX goes from +r (full) to -r (new)
+                    double wanePhase = phaseFraction - 0.5;
+                    terminatorX = r * (1.0 - 2.0 * wanePhase);
                 }
 
-                darkPath.moveTo(cx, cy - r);
-                for (float angle = 90; angle >= -90; angle -= 10) {
-                    float y = cy + r * (float) Math.sin(Math.toRadians(angle));
-                    float xOffset;
-                    if (p <= 0.5f) {
-                        xOffset = r * curveFactor * (float) Math.cos(Math.toRadians(angle));
-                        float x = cx + xOffset;
-                        darkPath.lineTo(x, y);
-                    } else {
-                        xOffset = r * curveFactor * (float) Math.cos(Math.toRadians(angle));
-                        float x = cx - xOffset;
-                        darkPath.lineTo(x, y);
+                if (illumination >= 0.99) {
+                    // Full moon — draw full lit circle
+                    canvas.drawCircle(cx, cy, r, litPaint);
+                } else if (illumination <= 0.01) {
+                    // New moon — already dark, nothing more to draw
+                } else {
+                    // Draw lit crescent/gibbous using terminator arc + limb arc
+                    Path litPath = new Path();
+                    litPath.moveTo(cx, cy - r);  // top of moon
+
+                    // Walk along the terminator (elliptical curve from top to bottom)
+                    int steps = 40;
+                    for (int i = 0; i <= steps; i++) {
+                        float angle = 90f - (180f * i / steps);  // 90 to -90
+                        float y = cy + r * (float) Math.sin(Math.toRadians(angle));
+                        float xTerminator = cx + (float) (terminatorX * Math.cos(Math.toRadians(angle)));
+                        litPath.lineTo(xTerminator, y);
                     }
+
+                    // Walk along the limb (outer edge) back from bottom to top
+                    for (int i = 0; i <= steps; i++) {
+                        float angle = -90f + (180f * i / steps);  // -90 to 90
+                        float y = cy + r * (float) Math.sin(Math.toRadians(angle));
+                        float xLimb;
+                        if (isWaxing) {
+                            xLimb = cx + r * (float) Math.cos(Math.toRadians(angle));  // right limb
+                        } else {
+                            xLimb = cx - r * (float) Math.cos(Math.toRadians(angle));  // left limb
+                        }
+                        litPath.lineTo(xLimb, y);
+                    }
+
+                    litPath.close();
+                    canvas.drawPath(litPath, litPaint);
                 }
-                darkPath.close();
-                canvas.drawPath(darkPath, darkPaint);
 
                 // Highlight ring for today
                 if (isToday) {
