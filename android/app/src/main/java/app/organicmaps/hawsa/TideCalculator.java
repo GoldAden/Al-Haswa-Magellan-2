@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.TimeZone;
 
 /**
- * Offline harmonic tide prediction for the Gulf of Aden region.
+ * Offline harmonic tide prediction for the Gulf of Aden and Arabian Sea region.
  * Uses verified Harmonic Constituents from TICON-4
  * (Hart-Davis, Dettmering & Seitz 2025, DGFI-TUM, CC BY 4.0)
- * for Aden and Djibouti reference stations.
+ * for Aden, Djibouti, Salalah, Masirah, and Muscat reference stations.
  *
  * Predictions are computed entirely on-device using the standard
  * harmonic method:  h(t) = Z0 + Sum[ f_i * A_i * cos(V_i + u_i - kappa_i) ]
@@ -85,9 +85,6 @@ public class TideCalculator {
     private static final double SPD_M3      = 43.47615636;
 
     // ===== V0 (Greenwich equilibrium argument at J2000.0) in degrees =====
-    // Computed from astronomical arguments at J2000.0 using Foreman/Schureman formulae:
-    //   tau_J2000 = 15*12 - s0 + h0 = 242.1441 deg
-    //   V0_i = specific linear combination of (tau, s0, h0, p0, N0)
     private static final double tau_J2000 = 242.1441;
 
     private static final double V0_M2      = mod360(2 * tau_J2000 - 2 * s0 + 2 * h0);
@@ -168,13 +165,10 @@ public class TideCalculator {
     //   SEANOE. https://doi.org/10.17882/109129
     // License: CC BY 4.0
     // Latitude: 12.788, Longitude: 44.975
-    // Epoch: 2007-10-09 to 2014-12-31
     // Z0 (MSL above LAT) = 1.682m  (MSL=1.451, LAT=-0.231)
-    // Heights predicted above LAT = Z0 + harmonic sum
     private static final double Z0_ADEN = 1.682;
     private static final double[][] ADEN_CONSTITUENTS = new double[NUM_CONSTITUENTS][2];
     static {
-        // {amplitude_m, kappa_deg_GMT}
         ADEN_CONSTITUENTS[IDX_M2]      = new double[]{0.48448993, 136.0078};
         ADEN_CONSTITUENTS[IDX_S2]      = new double[]{0.21433894, 156.4982};
         ADEN_CONSTITUENTS[IDX_N2]      = new double[]{0.13429483, 130.8815};
@@ -208,7 +202,6 @@ public class TideCalculator {
         ADEN_CONSTITUENTS[IDX_R2]      = new double[]{0.00329532, 188.8792};
         ADEN_CONSTITUENTS[IDX_M3]      = new double[]{0.00526565, 77.4024};
     }
-
     private static final double ADEN_LAT = 12.788;
     private static final double ADEN_LON = 44.975;
 
@@ -253,29 +246,182 @@ public class TideCalculator {
         DJIBOUTI_CONSTITUENTS[IDX_R2]      = new double[]{0.00363682, 189.5172};
         DJIBOUTI_CONSTITUENTS[IDX_M3]      = new double[]{0.00640507, 81.0819};
     }
-
     private static final double DJIBOUTI_LAT = 11.608;
     private static final double DJIBOUTI_LON = 43.140;
 
-    // ===== Station metadata =====
+    // ===== TICON-4 Salalah Station (salalah-114a-omn-uhslc_rq) =====
+    // Source: Same TICON-4 publication. CC BY 4.0
+    // Latitude: 16.935, Longitude: 54.007
+    // Z0 (MSL above LAT) = 1.308m (MSL=2.008, LAT=0.700)
+    private static final double Z0_SALALAH = 1.308;
+    private static final double[][] SALALAH_CONSTITUENTS = new double[NUM_CONSTITUENTS][2];
+    static {
+        SALALAH_CONSTITUENTS[IDX_M2]      = new double[]{0.31363983, 144.5635};
+        SALALAH_CONSTITUENTS[IDX_S2]      = new double[]{0.12302050, 167.9992};
+        SALALAH_CONSTITUENTS[IDX_N2]      = new double[]{0.08346450, 133.0392};
+        SALALAH_CONSTITUENTS[IDX_K1]      = new double[]{0.36328745, 344.4034};
+        SALALAH_CONSTITUENTS[IDX_O1]      = new double[]{0.18573503, 347.2097};
+        SALALAH_CONSTITUENTS[IDX_P1]      = new double[]{0.11086832, 341.9865};
+        SALALAH_CONSTITUENTS[IDX_Q1]      = new double[]{0.03964764, 348.5366};
+        SALALAH_CONSTITUENTS[IDX_K2]      = new double[]{0.03400899, 161.8978};
+        SALALAH_CONSTITUENTS[IDX_M4]      = new double[]{0.00178349, 326.4855};
+        SALALAH_CONSTITUENTS[IDX_MS4]     = new double[]{0.00090165, 144.9706};
+        SALALAH_CONSTITUENTS[IDX_MN4]     = new double[]{0.00139809, 254.4372};
+        SALALAH_CONSTITUENTS[IDX_2N2]     = new double[]{0.01457482, 99.9571};
+        SALALAH_CONSTITUENTS[IDX_S4]      = new double[]{0.00080562, 315.3151};
+        SALALAH_CONSTITUENTS[IDX_SA]      = new double[]{0.08282259, 325.9338};
+        SALALAH_CONSTITUENTS[IDX_SSA]     = new double[]{0.05153992, 121.7945};
+        SALALAH_CONSTITUENTS[IDX_MM]      = new double[]{0.00566807, 34.4934};
+        SALALAH_CONSTITUENTS[IDX_MF]      = new double[]{0.01088996, 6.3237};
+        SALALAH_CONSTITUENTS[IDX_M6]      = new double[]{0.00097412, 254.8187};
+        SALALAH_CONSTITUENTS[IDX_M1]      = new double[]{0.01301888, 253.2547};
+        SALALAH_CONSTITUENTS[IDX_J1]      = new double[]{0.02252522, 355.8095};
+        SALALAH_CONSTITUENTS[IDX_OO1]     = new double[]{0.01501756, 13.5962};
+        SALALAH_CONSTITUENTS[IDX_S1]      = new double[]{0.01992449, 118.1521};
+        SALALAH_CONSTITUENTS[IDX_RHO1]    = new double[]{0.00709823, 351.8937};
+        SALALAH_CONSTITUENTS[IDX_2Q1]     = new double[]{0.00614700, 337.1251};
+        SALALAH_CONSTITUENTS[IDX_NU2]     = new double[]{0.01626288, 139.5773};
+        SALALAH_CONSTITUENTS[IDX_MU2]     = new double[]{0.01257419, 101.0658};
+        SALALAH_CONSTITUENTS[IDX_L2]      = new double[]{0.00733504, 149.1080};
+        SALALAH_CONSTITUENTS[IDX_T2]      = new double[]{0.00526696, 178.6782};
+        SALALAH_CONSTITUENTS[IDX_LAMBDA2] = new double[]{0.00135707, 135.1148};
+        SALALAH_CONSTITUENTS[IDX_2SM2]    = new double[]{0.00186254, 356.8735};
+        SALALAH_CONSTITUENTS[IDX_R2]      = new double[]{0.00102177, 188.4466};
+        SALALAH_CONSTITUENTS[IDX_M3]      = new double[]{0.00040531, 152.4095};
+    }
+    private static final double SALALAH_LAT = 16.935;
+    private static final double SALALAH_LON = 54.007;
+
+    // ===== TICON-4 Masirah Station (masirah-113a-omn-uhslc_rq) =====
+    // Source: Same TICON-4 publication. CC BY 4.0
+    // Latitude: 20.687, Longitude: 58.872
+    // Z0 (MSL above LAT) = 1.795m (MSL=1.468, LAT=-0.327)
+    private static final double Z0_MASIRAH = 1.795;
+    private static final double[][] MASIRAH_CONSTITUENTS = new double[NUM_CONSTITUENTS][2];
+    static {
+        MASIRAH_CONSTITUENTS[IDX_M2]      = new double[]{0.60432201, 166.7580};
+        MASIRAH_CONSTITUENTS[IDX_S2]      = new double[]{0.23244261, 198.2638};
+        MASIRAH_CONSTITUENTS[IDX_N2]      = new double[]{0.14902426, 151.1544};
+        MASIRAH_CONSTITUENTS[IDX_K1]      = new double[]{0.40225975, 346.1305};
+        MASIRAH_CONSTITUENTS[IDX_O1]      = new double[]{0.21015346, 348.9465};
+        MASIRAH_CONSTITUENTS[IDX_P1]      = new double[]{0.12276425, 346.7567};
+        MASIRAH_CONSTITUENTS[IDX_Q1]      = new double[]{0.04492036, 351.2166};
+        MASIRAH_CONSTITUENTS[IDX_K2]      = new double[]{0.06301705, 190.4369};
+        MASIRAH_CONSTITUENTS[IDX_M4]      = new double[]{0.02481191, 287.0855};
+        MASIRAH_CONSTITUENTS[IDX_MS4]     = new double[]{0.01957121, 330.3619};
+        MASIRAH_CONSTITUENTS[IDX_MN4]     = new double[]{0.01157612, 268.3971};
+        MASIRAH_CONSTITUENTS[IDX_2N2]     = new double[]{0.02224816, 116.2897};
+        MASIRAH_CONSTITUENTS[IDX_S4]      = new double[]{0.00373421, 18.6880};
+        MASIRAH_CONSTITUENTS[IDX_SA]      = new double[]{0.02522256, 21.0020};
+        MASIRAH_CONSTITUENTS[IDX_SSA]     = new double[]{0.03299635, 139.9675};
+        MASIRAH_CONSTITUENTS[IDX_MM]      = new double[]{0.00350334, 133.7922};
+        MASIRAH_CONSTITUENTS[IDX_MF]      = new double[]{0.00694892, 14.8071};
+        MASIRAH_CONSTITUENTS[IDX_M6]      = new double[]{0.00174055, 82.5024};
+        MASIRAH_CONSTITUENTS[IDX_M1]      = new double[]{0.01726535, 257.3425};
+        MASIRAH_CONSTITUENTS[IDX_J1]      = new double[]{0.02428377, 0.1564};
+        MASIRAH_CONSTITUENTS[IDX_OO1]     = new double[]{0.01597166, 26.6319};
+        MASIRAH_CONSTITUENTS[IDX_S1]      = new double[]{0.02607897, 118.9441};
+        MASIRAH_CONSTITUENTS[IDX_RHO1]    = new double[]{0.00791915, 352.9461};
+        MASIRAH_CONSTITUENTS[IDX_2Q1]     = new double[]{0.00675428, 339.8422};
+        MASIRAH_CONSTITUENTS[IDX_NU2]     = new double[]{0.02945032, 154.0415};
+        MASIRAH_CONSTITUENTS[IDX_MU2]     = new double[]{0.01714332, 145.4059};
+        MASIRAH_CONSTITUENTS[IDX_L2]      = new double[]{0.01658332, 160.7903};
+        MASIRAH_CONSTITUENTS[IDX_T2]      = new double[]{0.01650002, 202.4852};
+        MASIRAH_CONSTITUENTS[IDX_LAMBDA2] = new double[]{0.00573131, 132.4206};
+        MASIRAH_CONSTITUENTS[IDX_2SM2]    = new double[]{0.00489158, 336.3531};
+        MASIRAH_CONSTITUENTS[IDX_R2]      = new double[]{0.00174294, 287.8046};
+        MASIRAH_CONSTITUENTS[IDX_M3]      = new double[]{0.00727712, 152.8783};
+    }
+    private static final double MASIRAH_LAT = 20.687;
+    private static final double MASIRAH_LON = 58.872;
+
+    // ===== TICON-4 Muscat Station (muscat-110a-omn-uhslc_rq) =====
+    // Source: Same TICON-4 publication. CC BY 4.0
+    // Latitude: 23.628, Longitude: 58.565
+    // Z0 (MSL above LAT) = 1.900m (MSL=2.324, LAT=0.424)
+    private static final double Z0_MUSCAT = 1.900;
+    private static final double[][] MUSCAT_CONSTITUENTS = new double[NUM_CONSTITUENTS][2];
+    static {
+        MUSCAT_CONSTITUENTS[IDX_M2]      = new double[]{0.63529783, 159.8115};
+        MUSCAT_CONSTITUENTS[IDX_S2]      = new double[]{0.24135936, 190.2711};
+        MUSCAT_CONSTITUENTS[IDX_N2]      = new double[]{0.15782833, 140.2610};
+        MUSCAT_CONSTITUENTS[IDX_K1]      = new double[]{0.39269852, 341.4488};
+        MUSCAT_CONSTITUENTS[IDX_O1]      = new double[]{0.20542370, 343.1163};
+        MUSCAT_CONSTITUENTS[IDX_P1]      = new double[]{0.11938481, 340.2778};
+        MUSCAT_CONSTITUENTS[IDX_Q1]      = new double[]{0.04347749, 343.5320};
+        MUSCAT_CONSTITUENTS[IDX_K2]      = new double[]{0.06237048, 184.1380};
+        MUSCAT_CONSTITUENTS[IDX_M4]      = new double[]{0.00648579, 198.4794};
+        MUSCAT_CONSTITUENTS[IDX_MS4]     = new double[]{0.00329725, 293.7129};
+        MUSCAT_CONSTITUENTS[IDX_MN4]     = new double[]{0.00301708, 147.4678};
+        MUSCAT_CONSTITUENTS[IDX_2N2]     = new double[]{0.02545040, 100.9444};
+        MUSCAT_CONSTITUENTS[IDX_S4]      = new double[]{0.00053473, 24.8893};
+        MUSCAT_CONSTITUENTS[IDX_SA]      = new double[]{0.05669365, 109.1931};
+        MUSCAT_CONSTITUENTS[IDX_SSA]     = new double[]{0.03708361, 182.7650};
+        MUSCAT_CONSTITUENTS[IDX_MM]      = new double[]{0.01200993, 61.8669};
+        MUSCAT_CONSTITUENTS[IDX_MF]      = new double[]{0.00823966, 12.4982};
+        MUSCAT_CONSTITUENTS[IDX_M6]      = new double[]{0.00075340, 133.4663};
+        MUSCAT_CONSTITUENTS[IDX_M1]      = new double[]{0.02162165, 277.2883};
+        MUSCAT_CONSTITUENTS[IDX_J1]      = new double[]{0.02548050, 346.2107};
+        MUSCAT_CONSTITUENTS[IDX_OO1]     = new double[]{0.02553843, 355.8150};
+        MUSCAT_CONSTITUENTS[IDX_S1]      = new double[]{0.02472754, 124.3401};
+        MUSCAT_CONSTITUENTS[IDX_RHO1]    = new double[]{0.00873157, 346.9967};
+        MUSCAT_CONSTITUENTS[IDX_2Q1]     = new double[]{0.00712748, 331.7141};
+        MUSCAT_CONSTITUENTS[IDX_NU2]     = new double[]{0.03109243, 145.2458};
+        MUSCAT_CONSTITUENTS[IDX_MU2]     = new double[]{0.02192178, 115.5017};
+        MUSCAT_CONSTITUENTS[IDX_L2]      = new double[]{0.01201048, 184.0851};
+        MUSCAT_CONSTITUENTS[IDX_T2]      = new double[]{0.01343106, 192.8740};
+        MUSCAT_CONSTITUENTS[IDX_LAMBDA2] = new double[]{0.00319159, 211.4949};
+        MUSCAT_CONSTITUENTS[IDX_2SM2]    = new double[]{0.00113602, 11.2381};
+        MUSCAT_CONSTITUENTS[IDX_R2]      = new double[]{0.00193718, 130.8130};
+        MUSCAT_CONSTITUENTS[IDX_M3]      = new double[]{0.00708118, 132.6580};
+    }
+    private static final double MUSCAT_LAT = 23.628;
+    private static final double MUSCAT_LON = 58.565;
+
+    // ===== Station metadata (5 stations) =====
     private static final double[][] STATION_COORDS = {
-        {ADEN_LAT, ADEN_LON},
-        {DJIBOUTI_LAT, DJIBOUTI_LON},
+        {ADEN_LAT, ADEN_LON},       // 0 - Aden
+        {DJIBOUTI_LAT, DJIBOUTI_LON}, // 1 - Djibouti
+        {SALALAH_LAT, SALALAH_LON},  // 2 - Salalah
+        {MASIRAH_LAT, MASIRAH_LON},  // 3 - Masirah
+        {MUSCAT_LAT, MUSCAT_LON},   // 4 - Muscat
     };
 
     private static final String[] STATION_NAMES_AR = {
-        "\u0639\u062F\u0646",           // عدن
-        "\u062C\u064A\u0628\u0648\u062A\u064A",       // جيبوتي
+        "\u0639\u062F\u0646",              // عدن
+        "\u062C\u064A\u0628\u0648\u062A\u064A",        // جيبوتي
+        "\u0635\u0644\u0627\u0644\u0629",            // صلالة
+        "\u0645\u0635\u064A\u0631\u0629",            // مصيرة
+        "\u0645\u0633\u0642\u0637",            // مسقط
     };
 
     private static final String[] STATION_NAMES_EN = {
         "Aden",
         "Djibouti",
+        "Salalah",
+        "Masirah",
+        "Muscat",
     };
 
     private static final String[] STATION_SOURCES_AR = {
         "TICON-4 \u2013 \u0639\u062F\u0646",    // TICON-4 – عدن
         "TICON-4 \u2013 \u062C\u064A\u0628\u0648\u062A\u064A",  // TICON-4 – جيبوتي
+        "TICON-4 \u2013 \u0635\u0644\u0627\u0644\u0629",  // TICON-4 – صلالة
+        "TICON-4 \u2013 \u0645\u0635\u064A\u0631\u0629",  // TICON-4 – مصيرة
+        "TICON-4 \u2013 \u0645\u0633\u0642\u0637",  // TICON-4 – مسقط
+    };
+
+    private static final double[] Z0_ARRAY = {
+        Z0_ADEN, Z0_DJIBOUTI, Z0_SALALAH, Z0_MASIRAH, Z0_MUSCAT
+    };
+
+    private static final double[][][] ALL_CONSTITUENTS = {
+        ADEN_CONSTITUENTS, DJIBOUTI_CONSTITUENTS, SALALAH_CONSTITUENTS,
+        MASIRAH_CONSTITUENTS, MUSCAT_CONSTITUENTS
+    };
+
+    private static final double[] MSL_ARRAY = {
+        1.451, 1.914, 2.008, 1.468, 2.324
     };
 
     // ===== Nodal modulation: f and u =====
@@ -297,6 +443,7 @@ public class TideCalculator {
     /**
      * Nodal amplitude factor f for each constituent.
      * From Schureman Table 14.
+     * FIX: Removed case IDX_MKS2 which referenced an undefined constant.
      */
     private static double nodalF(int idx, double N_deg) {
         double N_r = Math.toRadians(N_deg);
@@ -328,7 +475,6 @@ public class TideCalculator {
             case IDX_2Q1: // 2Q1 (same as O1)
                 return 1.009 + 0.187 * Math.cos(N_r) - 0.015 * Math.cos(2 * N_r);
             case IDX_K2: // K2
-            case IDX_MKS2: // not in our list but placeholder
                 return 1.024 + 0.286 * Math.cos(N_r) + 0.024 * Math.cos(2 * N_r);
             case IDX_M4: // M4 = f(M2)^2
             case IDX_MN4: // MN4 ≈ f(M2)^2
@@ -415,8 +561,8 @@ public class TideCalculator {
      */
     public static double getTideHeight(long timeMillisUTC) {
         double N_deg = computeN(timeMillisUTC);
-        double[][] stationData = (currentStationIndex == 0) ? ADEN_CONSTITUENTS : DJIBOUTI_CONSTITUENTS;
-        double Z0 = (currentStationIndex == 0) ? Z0_ADEN : Z0_DJIBOUTI;
+        double[][] stationData = ALL_CONSTITUENTS[currentStationIndex];
+        double Z0 = Z0_ARRAY[currentStationIndex];
 
         double hoursSinceJ2000 = (timeMillisUTC - J2000_MS) / 3600000.0;
         double h = Z0;
@@ -595,9 +741,9 @@ public class TideCalculator {
                 if (e.height > day.maxHeight) day.maxHeight = e.height;
                 if (e.height < day.minHeight) day.minHeight = e.height;
             }
-            // Fallback if no events found (shouldn't happen)
-            if (day.maxHeight == Double.MIN_VALUE) day.maxHeight = Z0_ADEN;
-            if (day.minHeight == Double.MAX_VALUE) day.minHeight = Z0_ADEN;
+            // Fallback if no events found
+            if (day.maxHeight == Double.MIN_VALUE) day.maxHeight = Z0_ARRAY[currentStationIndex];
+            if (day.minHeight == Double.MAX_VALUE) day.minHeight = Z0_ARRAY[currentStationIndex];
             summary.add(day);
             cal.add(Calendar.DAY_OF_MONTH, 1);
         }
@@ -683,19 +829,17 @@ public class TideCalculator {
      * Get the Z0 datum for current station.
      */
     public static double getZ0() {
-        return (currentStationIndex == 0) ? Z0_ADEN : Z0_DJIBOUTI;
+        return Z0_ARRAY[currentStationIndex];
     }
 
     /**
      * Get datum info for current station (Arabic).
      */
     public static String getDatumInfoAr() {
-        if (currentStationIndex == 0) {
-            return "\u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u0628\u062D\u0631 \u0627\u0644\u0645\u062A\u0648\u0633\u0637: 1.451\u0645 \u0641\u0648\u0642 LAT";
-            // مستوى البحر المتوسط: 1.451م فوق LAT
-        } else {
-            return "\u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u0628\u062D\u0631 \u0627\u0644\u0645\u062A\u0648\u0633\u0637: 1.914\u0645 \u0641\u0648\u0642 LAT";
-        }
+        double msl = MSL_ARRAY[currentStationIndex];
+        return "\u0645\u0633\u062A\u0648\u0649 \u0627\u0644\u0628\u062D\u0631 \u0627\u0644\u0645\u062A\u0648\u0633\u0637: "
+            + String.format(java.util.Locale.US, "%.3f", msl)
+            + "\u0645 \u0641\u0648\u0642 LAT";
     }
 
     /**
@@ -703,6 +847,12 @@ public class TideCalculator {
      */
     public static String getAttributionAr() {
         return "\u0628\u064A\u0627\u0646\u0627\u062A \u0627\u0644\u0645\u062F \u0648\u0627\u0644\u062C\u0632\u0631 \u0645\u0646 TICON-4 (CC BY 4.0) \u2014 Hart-Davis, Dettmering & Seitz 2025";
-        // بيانات المد والجزر من TICON-4 (CC BY 4.0) — Hart-Davis, Dettmering & Seitz 2025
+    }
+
+    /**
+     * Get total number of stations.
+     */
+    public static int getStationCount() {
+        return STATION_COORDS.length;
     }
 }
