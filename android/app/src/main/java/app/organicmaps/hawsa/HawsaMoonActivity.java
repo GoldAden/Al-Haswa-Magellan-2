@@ -430,10 +430,15 @@ public class HawsaMoonActivity extends AppCompatActivity {
     }
 
     /**
-     * Create a realistic moon icon for the weekly strip using proper
-     * terminator algorithm matching MoonPhaseView.
+     * Create a realistic moon icon for the weekly strip using the physically
+     * accurate terminator model matching MoonPhaseView.
      *
-     * Phase mapping:
+     * The terminator is the projection of the great circle dividing the Moon's
+     * lit and dark hemispheres. When projected onto the 2D disk, it forms an
+     * ellipse whose x-offset = r * cos(2*PI*p), with the sign flipped for
+     * waning phases so the visible terminator is on the correct side.
+     *
+     * Phase mapping (Northern Hemisphere):
      *   0.00 = new moon (all dark)
      *   0.25 = first quarter (right half lit)
      *   0.50 = full moon (all lit)
@@ -452,67 +457,77 @@ public class HawsaMoonActivity extends AppCompatActivity {
                 float cy = h / 2f;
                 float r = Math.min(w, h) / 2f - dp(4);
 
+                float p = phase;
+                double illum = 0.5 * (1.0 - Math.cos(2.0 * Math.PI * p));
+
                 // Moon lit base
                 Paint litPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 litPaint.setColor(isToday ? 0xFFF1F5F9 : 0xFF94A3B8);
                 litPaint.setStyle(Paint.Style.FILL);
                 canvas.drawCircle(cx, cy, r, litPaint);
 
-                // Dark overlay using realistic terminator
+                // Edge cases: full moon or new moon
+                if (illum >= 0.99) {
+                    // Full moon — all lit, no dark overlay
+                    if (isToday) {
+                        Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                        ringPaint.setColor(COLOR_GOLD);
+                        ringPaint.setStyle(Paint.Style.STROKE);
+                        ringPaint.setStrokeWidth(2f);
+                        canvas.drawCircle(cx, cy, r + dp(1), ringPaint);
+                    }
+                    return;
+                } else if (illum <= 0.01) {
+                    // New moon — all dark
+                    Paint darkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    darkPaint.setColor(0xFF1E293B);
+                    darkPaint.setStyle(Paint.Style.FILL);
+                    canvas.drawCircle(cx, cy, r, darkPaint);
+                    if (isToday) {
+                        Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                        ringPaint.setColor(COLOR_GOLD);
+                        ringPaint.setStyle(Paint.Style.STROKE);
+                        ringPaint.setStrokeWidth(2f);
+                        canvas.drawCircle(cx, cy, r + dp(1), ringPaint);
+                    }
+                    return;
+                }
+
+                // Physically accurate terminator position
+                boolean isWaxing = (p <= 0.5f);
+                double signedTerminatorX = (isWaxing ? 1.0 : -1.0) * r * Math.cos(2.0 * Math.PI * p);
+
+                // Dark overlay using terminator semi-ellipse + dark limb arc
                 Paint darkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 darkPaint.setColor(0xFF1E293B);
                 darkPaint.setStyle(Paint.Style.FILL);
 
                 Path darkPath = new Path();
-                float p = phase;  // 0=new, 0.5=full, 1=new
 
-                if (p <= 0.5f) {
-                    // Waxing: right side lit, dark moves from right to left
-                    darkPath.moveTo(cx, cy - r);
+                // Start at top of moon disk
+                darkPath.moveTo(cx, cy - r);
+
+                // Draw the dark limb arc
+                if (isWaxing) {
+                    // Waxing: right side lit, dark limb is LEFT side
                     darkPath.arcTo(cx - r, cy - r, cx + r, cy + r, -90, -180, true);
-                    if (p < 0.25f) {
-                        // Crescent: terminator on right side of center (concave right)
-                        float curveFactor = (0.25f - p) / 0.25f;
-                        for (float angle = 90; angle >= -90; angle -= 5) {
-                            float y = cy + r * (float) Math.sin(Math.toRadians(angle));
-                            float x = cx + r * curveFactor * (float) Math.cos(Math.toRadians(angle));
-                            darkPath.lineTo(x, y);
-                        }
-                    } else {
-                        // Gibbous: terminator on left side of center (concave left)
-                        float curveFactor = (p - 0.25f) / 0.25f;
-                        for (float angle = 90; angle >= -90; angle -= 5) {
-                            float y = cy + r * (float) Math.sin(Math.toRadians(angle));
-                            float x = cx - r * curveFactor * (float) Math.cos(Math.toRadians(angle));
-                            darkPath.lineTo(x, y);
-                        }
-                    }
-                    darkPath.close();
                 } else {
-                    // Waning: left side lit, dark moves from left to right
-                    float wp = p - 0.5f;
-                    darkPath.moveTo(cx, cy - r);
+                    // Waning: left side lit, dark limb is RIGHT side
                     darkPath.arcTo(cx - r, cy - r, cx + r, cy + r, -90, 180, false);
-                    if (wp < 0.25f) {
-                        // Waning gibbous: terminator on right of center
-                        float curveFactor = 1 - wp / 0.25f;
-                        for (float angle = 90; angle >= -90; angle -= 5) {
-                            float y = cy + r * (float) Math.sin(Math.toRadians(angle));
-                            float x = cx + r * (1 - curveFactor) * (float) Math.cos(Math.toRadians(angle));
-                            darkPath.lineTo(x, y);
-                        }
-                    } else {
-                        // Waning crescent: terminator on left of center
-                        float curveFactor = 1 - (wp - 0.25f) / 0.25f;
-                        for (float angle = 90; angle >= -90; angle -= 5) {
-                            float y = cy + r * (float) Math.sin(Math.toRadians(angle));
-                            float x = cx - r * curveFactor * (float) Math.cos(Math.toRadians(angle));
-                            darkPath.lineTo(x, y);
-                        }
-                    }
-                    darkPath.close();
                 }
 
+                // Walk along the terminator from bottom back to top
+                // The terminator is a semi-ellipse: x = cx + signedTerminatorX * cos(angle), y = cy + r * sin(angle)
+                // angle goes from +90 (bottom) to -90 (top)
+                int steps = 36;
+                for (int i = steps; i >= 0; i--) {
+                    float angle = -90f + (180f * i / steps);
+                    float y = cy + r * (float) Math.sin(Math.toRadians(angle));
+                    float xTerminator = cx + (float) (signedTerminatorX * Math.cos(Math.toRadians(angle)));
+                    darkPath.lineTo(xTerminator, y);
+                }
+
+                darkPath.close();
                 canvas.drawPath(darkPath, darkPaint);
 
                 // Highlight ring for today
