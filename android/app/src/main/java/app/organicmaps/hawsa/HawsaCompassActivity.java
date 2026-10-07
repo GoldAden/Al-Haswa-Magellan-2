@@ -6,15 +6,23 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,18 +39,18 @@ import java.util.TimeZone;
 import app.organicmaps.R;
 
 /**
- * Fullscreen Compass & Qibla activity with 5 Azan times.
+ * Compass & Qibla activity with 5 Azan times.
  * Modern immersive design. GPS-based location with saved fallback.
- * Fixed: status bar color matches compass bg, GPS prompt single-dismiss, auto-dismiss on GPS enable.
+ * Status bar is visible (not immersive) matching the dark navy background.
+ * Qibla direction shown prominently with arrow and Kaaba symbol.
  */
 public class HawsaCompassActivity extends AppCompatActivity {
 
     private CompassView compassView;
-    private TextView tvQiblaDirection;
-    private TextView tvQiblaDegrees;
-    private TextView tvQiblaArrow;
-    private LinearLayout prayerTimesContainer;
     private ImageView btnBack;
+    private TextView tvQiblaLabel;
+    private TextView tvQiblaDegrees;
+    private LinearLayout prayerTimesContainer;
 
     private LocationManager locationManager;
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
@@ -53,13 +61,20 @@ public class HawsaCompassActivity extends AppCompatActivity {
 
     private boolean locationAcquired = false;
 
-    // GPS dialog reference — prevents stacking and allows single-dismiss
+    // GPS dialog reference
     private AlertDialog gpsDialog = null;
-    private boolean isCheckingGpsOnResume = false;
+
+    // Theme colors
+    private static final int COLOR_BG = 0xFF0D1B2A;
+    private static final int COLOR_CARD = 0xFF111827;
+    private static final int COLOR_GOLD = 0xFFD4AF37;
+    private static final int COLOR_TEXT = 0xFFE0E1DD;
+    private static final int COLOR_TEXT_DIM = 0xFF778DA9;
+    private static final int COLOR_SEPARATOR = 0xFF1E293B;
 
     // Only 5 Azan prayers (NO Sunrise)
     private static final String[] PRAYER_NAMES_AR = {
-        "\u0627\u0644\u0641\u062C\u0631", "\u0627\u0644\u0638\u0647\u0631", "\u0627\u0644\u0639\u0635\u0631", "\u0627\u0644\u0645\u063A\u0631\u0628", "\u0627\u0644\u0639\u0634\u0627\u0621"
+        "الفجر", "الظهر", "العصر", "المغرب", "العشاء"
     };
 
     private static final int[] PRAYER_COLORS = {
@@ -92,7 +107,6 @@ public class HawsaCompassActivity extends AppCompatActivity {
         @Override
         public void onProviderEnabled(String provider) {
             requestLocationUpdates();
-            // Auto-dismiss GPS dialog if it was showing
             dismissGpsDialog();
         }
 
@@ -106,40 +120,206 @@ public class HawsaCompassActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Fullscreen immersive mode
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            getWindow().setDecorFitsSystemWindows(false);
-        } else {
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
-
-        // === FIX: Status bar color matches compass background ===
+        // === Status bar VISIBLE with matching color (not immersive/hidden) ===
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setStatusBarColor(0xFF0D1B2A);  // Match COLOR_BG exactly
-            getWindow().setNavigationBarColor(0xFF0D1B2A);
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            getWindow().setStatusBarColor(COLOR_BG);
+            getWindow().setNavigationBarColor(COLOR_BG);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                View decor = getWindow().getDecorView();
+                int flags = decor.getSystemUiVisibility();
+                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                decor.setSystemUiVisibility(flags);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                getWindow().setDecorFitsSystemWindows(true);
+            }
         }
-
-        // Immersive sticky mode
-        hideSystemUI();
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-        setContentView(R.layout.activity_hawsa_compass);
 
-        // Back button
-        btnBack = findViewById(R.id.btn_compass_back);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> {
-                finish();
-                overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-            });
-        }
+        // Build the layout programmatically
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setBackgroundColor(COLOR_BG);
+        scrollView.setFillViewport(true);
 
-        compassView = findViewById(R.id.compass_view);
-        tvQiblaDirection = findViewById(R.id.tv_qibla_direction);
-        tvQiblaDegrees = findViewById(R.id.tv_qibla_degrees);
-        tvQiblaArrow = findViewById(R.id.tv_qibla_arrow);
-        prayerTimesContainer = findViewById(R.id.prayer_times_container);
+        LinearLayout rootLayout = new LinearLayout(this);
+        rootLayout.setOrientation(LinearLayout.VERTICAL);
+        rootLayout.setBackgroundColor(COLOR_BG);
+        rootLayout.setPadding(dp(20), dp(12), dp(20), dp(30));
+        rootLayout.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        rootLayout.setClipToPadding(false);
+
+        // === Back button + Title ===
+        LinearLayout topBar = new LinearLayout(this);
+        topBar.setOrientation(LinearLayout.HORIZONTAL);
+        topBar.setGravity(Gravity.CENTER_VERTICAL);
+        topBar.setPadding(0, 0, 0, dp(12));
+
+        btnBack = new ImageView(this);
+        btnBack.setImageResource(R.drawable.ic_hawsa_back);
+        btnBack.setColorFilter(COLOR_GOLD);
+        btnBack.setPadding(dp(4), dp(4), dp(4), dp(4));
+        LinearLayout.LayoutParams backParams = new LinearLayout.LayoutParams(dp(40), dp(40));
+        btnBack.setLayoutParams(backParams);
+        btnBack.setOnClickListener(v -> {
+            finish();
+            overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+        });
+
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText("البوصلة والقبلة");
+        tvTitle.setTextSize(22);
+        tvTitle.setTextColor(COLOR_GOLD);
+        tvTitle.setTypeface(null, Typeface.BOLD);
+        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(
+                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        tvTitle.setLayoutParams(titleParams);
+        tvTitle.setGravity(Gravity.CENTER);
+
+        View spacer = new View(this);
+        spacer.setLayoutParams(new LinearLayout.LayoutParams(dp(40), dp(40)));
+
+        topBar.addView(btnBack);
+        topBar.addView(tvTitle);
+        topBar.addView(spacer);
+        rootLayout.addView(topBar);
+
+        // === Compass View ===
+        compassView = new CompassView(this);
+        LinearLayout.LayoutParams compassParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(340));
+        compassView.setLayoutParams(compassParams);
+        rootLayout.addView(compassView);
+
+        // === Qibla Direction Card ===
+        LinearLayout qiblaCard = createCard();
+        qiblaCard.setGravity(Gravity.CENTER);
+
+        // Qibla title
+        TextView tvQiblaTitle = new TextView(this);
+        tvQiblaTitle.setText("اتجاه القبلة");
+        tvQiblaTitle.setTextSize(18);
+        tvQiblaTitle.setTextColor(COLOR_GOLD);
+        tvQiblaTitle.setTypeface(null, Typeface.BOLD);
+        tvQiblaTitle.setGravity(Gravity.CENTER);
+        tvQiblaTitle.setPadding(0, dp(8), 0, dp(4));
+        qiblaCard.addView(tvQiblaTitle);
+
+        // Qibla arrow (custom view with Kaaba symbol)
+        View qiblaArrowView = new View(this) {
+            private double qiblaDeg = 0;
+            private String qiblaDir = "";
+
+            public View init(double deg, String dir) {
+                this.qiblaDeg = deg;
+                this.qiblaDir = dir;
+                return this;
+            }
+        };
+        // We'll update the Qibla info after location is acquired
+        tvQiblaLabel = new TextView(this);
+        tvQiblaLabel.setText("جارٍ تحديد الموقع...");
+        tvQiblaLabel.setTextSize(14);
+        tvQiblaLabel.setTextColor(COLOR_TEXT_DIM);
+        tvQiblaLabel.setGravity(Gravity.CENTER);
+        tvQiblaLabel.setPadding(0, dp(4), 0, dp(4));
+        qiblaCard.addView(tvQiblaLabel);
+
+        tvQiblaDegrees = new TextView(this);
+        tvQiblaDegrees.setText("");
+        tvQiblaDegrees.setTextSize(24);
+        tvQiblaDegrees.setTextColor(COLOR_GOLD);
+        tvQiblaDegrees.setTypeface(null, Typeface.BOLD);
+        tvQiblaDegrees.setGravity(Gravity.CENTER);
+        tvQiblaDegrees.setPadding(0, dp(2), 0, dp(4));
+        qiblaCard.addView(tvQiblaDegrees);
+
+        // Qibla Kaaba mini-icon view
+        View kaabaIcon = new View(this) {
+            @Override
+            protected void onDraw(Canvas canvas) {
+                super.onDraw(canvas);
+                float w = getWidth();
+                float h = getHeight();
+                float cx = w / 2f;
+                float cy = h / 2f;
+                float size = Math.min(w, h) / 2f - dp(4);
+
+                // Kaaba body
+                Paint kaabaPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                kaabaPaint.setColor(COLOR_GOLD);
+                kaabaPaint.setStyle(Paint.Style.FILL);
+                RectF kaabaRect = new RectF(cx - size, cy - size, cx + size, cy + size);
+                canvas.drawRect(kaabaRect, kaabaPaint);
+
+                // Kaaba stripe (kiswah gold stripe)
+                Paint stripePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                stripePaint.setColor(0xFFB8860B);
+                stripePaint.setStyle(Paint.Style.FILL);
+                canvas.drawRect(new RectF(cx - size, cy - dp(2), cx + size, cy + dp(2)), stripePaint);
+
+                // Kaaba door
+                Paint doorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                doorPaint.setColor(0xFF8B6914);
+                doorPaint.setStyle(Paint.Style.FILL);
+                canvas.drawRect(new RectF(cx - dp(4), cy + dp(2), cx + dp(4), cy + size - dp(2)), doorPaint);
+
+                // Border
+                Paint borderPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                borderPaint.setColor(0xFF8B6914);
+                borderPaint.setStyle(Paint.Style.STROKE);
+                borderPaint.setStrokeWidth(1.5f);
+                canvas.drawRect(kaabaRect, borderPaint);
+            }
+        };
+        int iconSize = dp(50);
+        LinearLayout.LayoutParams kaabaParams = new LinearLayout.LayoutParams(iconSize, iconSize);
+        kaabaParams.gravity = Gravity.CENTER;
+        kaabaParams.setMargins(0, dp(4), 0, dp(8));
+        kaabaIcon.setLayoutParams(kaabaParams);
+        qiblaCard.addView(kaabaIcon);
+
+        // Qibla direction hint
+        TextView tvQiblaHint = new TextView(this);
+        tvQiblaHint.setText("وجّه هاتفك نحو اتجاه القبلة المشار إليه بالسهم الذهبي على البوصلة");
+        tvQiblaHint.setTextSize(12);
+        tvQiblaHint.setTextColor(COLOR_TEXT_DIM);
+        tvQiblaHint.setGravity(Gravity.CENTER);
+        tvQiblaHint.setPadding(dp(8), 0, dp(8), dp(8));
+        qiblaCard.addView(tvQiblaHint);
+
+        rootLayout.addView(qiblaCard);
+
+        // === Prayer Times Card ===
+        LinearLayout prayerCard = createCard();
+        prayerCard.setPadding(dp(20), dp(16), dp(20), dp(16));
+
+        TextView tvPrayerTitle = new TextView(this);
+        tvPrayerTitle.setText("أوقات الأذان");
+        tvPrayerTitle.setTextSize(18);
+        tvPrayerTitle.setTextColor(COLOR_GOLD);
+        tvPrayerTitle.setTypeface(null, Typeface.BOLD);
+        tvPrayerTitle.setPadding(0, 0, 0, dp(12));
+        prayerCard.addView(tvPrayerTitle);
+
+        prayerTimesContainer = new LinearLayout(this);
+        prayerTimesContainer.setOrientation(LinearLayout.VERTICAL);
+        prayerCard.addView(prayerTimesContainer);
+
+        rootLayout.addView(prayerCard);
+
+        // === Designer credit ===
+        TextView tvCredit = new TextView(this);
+        tvCredit.setText("تم تصميم هذا التطبيق من قبل أصيل صادق");
+        tvCredit.setTextSize(10);
+        tvCredit.setTextColor(0xFF415A77);
+        tvCredit.setGravity(Gravity.CENTER);
+        tvCredit.setPadding(0, dp(20), 0, 0);
+        rootLayout.addView(tvCredit);
+
+        scrollView.addView(rootLayout);
+        setContentView(scrollView);
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
@@ -152,25 +332,6 @@ public class HawsaCompassActivity extends AppCompatActivity {
         buildPrayerTimes();
     }
 
-    private void hideSystemUI() {
-        View decorView = getWindow().getDecorView();
-        int uiOptions = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN;
-        decorView.setSystemUiVisibility(uiOptions);
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            hideSystemUI();
-        }
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -180,9 +341,8 @@ public class HawsaCompassActivity extends AppCompatActivity {
         if (locationAcquired) {
             requestLocationUpdates();
         }
-        hideSystemUI();
 
-        // === FIX: Auto-dismiss GPS dialog if GPS was enabled while away ===
+        // Auto-dismiss GPS dialog if GPS was enabled while away
         if (gpsDialog != null && gpsDialog.isShowing()) {
             if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 dismissGpsDialog();
@@ -228,7 +388,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
                     showGPSPrompt();
                 }
             } else {
-                Toast.makeText(this, "\u064A\u062C\u0628 \u062A\u0641\u0639\u064A\u0644 \u0625\u0630\u0646 \u0627\u0644\u0645\u0648\u0642\u0639 \u0644\u062F\u0642\u0629 \u0627\u062A\u062C\u0627\u0647 \u0627\u0644\u0642\u0628\u0644\u0629",
+                Toast.makeText(this, "يجب تفعيل إذن الموقع لدقة اتجاه القبلة",
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -244,7 +404,6 @@ public class HawsaCompassActivity extends AppCompatActivity {
                         10000, 10, locationListener);
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                         10000, 10, locationListener);
-                // Also try to get last known location for faster initial fix
                 Location lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 if (lastKnown != null) {
                     saveLocation(lastKnown);
@@ -278,8 +437,6 @@ public class HawsaCompassActivity extends AppCompatActivity {
                 .getFloat(KEY_LAT, Float.MIN_VALUE);
         float savedLon = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
                 .getFloat(KEY_LON, Float.MIN_VALUE);
-        float savedTz = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                .getFloat(KEY_TZ, 3.0f);
 
         if (savedLat != Float.MIN_VALUE && savedLon != Float.MIN_VALUE) {
             locationAcquired = true;
@@ -291,60 +448,54 @@ public class HawsaCompassActivity extends AppCompatActivity {
         double tzOffset = TimeZone.getDefault().getRawOffset() / 3600000.0;
         PrayerTimesCalculator.setLocation(lat, lon, tzOffset);
 
-        // Calculate and set Qibla bearing
+        // Calculate Qibla bearing
         double qibla = PrayerTimesCalculator.calculateQiblaBearing();
         if (compassView != null) {
             compassView.setQiblaBearing(qibla);
         }
 
-        // Update Qibla direction display
+        // Update Qibla direction text
         String directionAr = getQiblaDirectionArabic(qibla);
-        if (tvQiblaDirection != null) {
-            tvQiblaDirection.setText("\u0627\u062A\u062C\u0627\u0647 \u0627\u0644\u0642\u0628\u0644\u0629: " + directionAr);
+        if (tvQiblaLabel != null) {
+            tvQiblaLabel.setText("اتجاه القبلة: " + directionAr);
+            tvQiblaLabel.setTextColor(COLOR_TEXT);
         }
         if (tvQiblaDegrees != null) {
-            tvQiblaDegrees.setText(String.format(Locale.US, "%.0f\u00B0 \u0645\u0646 \u0627\u0644\u0634\u0645\u0627\u0644", qibla));
-        }
-        if (tvQiblaArrow != null) {
-            tvQiblaArrow.setText("\u2192 " + String.format(Locale.US, "%.0f\u00B0", qibla));
+            tvQiblaDegrees.setText(String.format(Locale.US, "%.0f° من الشمال", qibla));
         }
 
         buildPrayerTimes();
     }
 
     private String getQiblaDirectionArabic(double bearing) {
-        if (bearing >= 337.5 || bearing < 22.5) return "\u0634\u0645\u0627\u0644";
-        if (bearing >= 22.5 && bearing < 67.5) return "\u0634\u0645\u0627\u0644 \u0634\u0631\u0642";
-        if (bearing >= 67.5 && bearing < 112.5) return "\u0634\u0631\u0642";
-        if (bearing >= 112.5 && bearing < 157.5) return "\u062C\u0646\u0648\u0628 \u0634\u0631\u0642";
-        if (bearing >= 157.5 && bearing < 202.5) return "\u062C\u0646\u0648\u0628";
-        if (bearing >= 202.5 && bearing < 247.5) return "\u062C\u0646\u0648\u0628 \u063A\u0631\u0628";
-        if (bearing >= 247.5 && bearing < 292.5) return "\u063A\u0631\u0628";
-        if (bearing >= 292.5 && bearing < 337.5) return "\u0634\u0645\u0627\u0644 \u063A\u0631\u0628";
-        return "\u0634\u0645\u0627\u0644";
+        if (bearing >= 337.5 || bearing < 22.5) return "شمال";
+        if (bearing >= 22.5 && bearing < 67.5) return "شمال شرق";
+        if (bearing >= 67.5 && bearing < 112.5) return "شرق";
+        if (bearing >= 112.5 && bearing < 157.5) return "جنوب شرق";
+        if (bearing >= 157.5 && bearing < 202.5) return "جنوب";
+        if (bearing >= 202.5 && bearing < 247.5) return "جنوب غرب";
+        if (bearing >= 247.5 && bearing < 292.5) return "غرب";
+        if (bearing >= 292.5 && bearing < 337.5) return "شمال غرب";
+        return "شمال";
     }
 
-    // === FIX: GPS prompt with single-dismiss and auto-dismiss ===
+    // GPS prompt with single-dismiss
     private void showGPSPrompt() {
-        // Don't stack dialogs
-        if (gpsDialog != null && gpsDialog.isShowing()) {
-            return;
-        }
+        if (gpsDialog != null && gpsDialog.isShowing()) return;
 
         gpsDialog = new AlertDialog.Builder(this, R.style.HawsaAlertDialog)
-                .setTitle("\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0648\u0642\u0639")
-                .setMessage("\u064A\u062C\u0628 \u062A\u0641\u0639\u064A\u0644 \u062E\u062F\u0645\u0629 \u0627\u0644\u0645\u0648\u0642\u0639 (GPS) \u0644\u062F\u0642\u0629 \u0627\u062A\u062C\u0627\u0647 \u0627\u0644\u0642\u0628\u0644\u0629 \u0648\u0623\u0648\u0642\u0627\u062A \u0627\u0644\u0623\u0630\u0627\u0646. \u0647\u0644 \u062A\u0631\u064A\u062F \u0627\u0644\u0630\u0647\u0627\u0628 \u0625\u0644\u0649 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A\u061F")
-                .setPositiveButton("\u0641\u062A\u062D \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A", (dialog, which) -> {
+                .setTitle("تفعيل الموقع")
+                .setMessage("يجب تفعيل خدمة الموقع (GPS) لدقة اتجاه القبلة وأوقات الأذان. هل تريد الذهاب إلى الإعدادات؟")
+                .setPositiveButton("فتح الإعدادات", (dialog, which) -> {
                     try {
                         startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     } catch (Exception ignored) {}
                     gpsDialog = null;
                 })
-                .setNegativeButton("\u0625\u0644\u063A\u0627\u0621", (dialog, which) -> {
-                    // Single press dismisses immediately
+                .setNegativeButton("إلغاء", (dialog, which) -> {
                     gpsDialog = null;
                 })
-                .setCancelable(true)  // === FIX: Allow back press to dismiss too ===
+                .setCancelable(true)
                 .setOnCancelListener(dialog -> {
                     gpsDialog = null;
                 })
@@ -353,9 +504,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
 
     private void dismissGpsDialog() {
         if (gpsDialog != null) {
-            try {
-                gpsDialog.dismiss();
-            } catch (Exception ignored) {}
+            try { gpsDialog.dismiss(); } catch (Exception ignored) {}
             gpsDialog = null;
         }
     }
@@ -387,8 +536,8 @@ public class HawsaCompassActivity extends AppCompatActivity {
         for (int i = 0; i < 5; i++) {
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
-            row.setPadding(12, 10, 12, 10);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setPadding(dp(12), dp(10), dp(12), dp(10));
 
             boolean isNext = (i == nextPrayerIdx);
             if (isNext) {
@@ -397,9 +546,9 @@ public class HawsaCompassActivity extends AppCompatActivity {
 
             // Prayer icon circle
             View iconCircle = new View(this);
-            int iconSize = (int) (28 * getResources().getDisplayMetrics().density);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSize, iconSize);
-            iconParams.setMargins(0, 0, 12, 0);
+            int iconSz = dp(28);
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(iconSz, iconSz);
+            iconParams.setMargins(0, 0, dp(12), 0);
             iconCircle.setLayoutParams(iconParams);
             iconCircle.setBackground(createCircleDrawable(PRAYER_COLORS[i]));
 
@@ -407,7 +556,7 @@ public class HawsaCompassActivity extends AppCompatActivity {
             TextView tvName = new TextView(this);
             tvName.setText(PRAYER_NAMES_AR[i]);
             tvName.setTextSize(16);
-            tvName.setTextColor(isNext ? 0xFFD4AF37 : 0xFFE0E1DD);
+            tvName.setTextColor(isNext ? COLOR_GOLD : COLOR_TEXT);
             tvName.getPaint().setFakeBoldText(isNext);
             LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(
                     0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
@@ -417,12 +566,11 @@ public class HawsaCompassActivity extends AppCompatActivity {
             TextView tvTime = new TextView(this);
             tvTime.setText(prayerTimes[i]);
             tvTime.setTextSize(14);
-            tvTime.setTextColor(isNext ? 0xFFD4AF37 : 0xFF778DA9);
+            tvTime.setTextColor(isNext ? COLOR_GOLD : COLOR_TEXT_DIM);
             tvTime.getPaint().setFakeBoldText(isNext);
 
-            // Next indicator
             if (isNext) {
-                tvTime.append(" \u0627\u0644\u0642\u0627\u062F\u0645\u0629");
+                tvTime.append(" القادمة");
             }
 
             row.addView(iconCircle);
@@ -432,11 +580,10 @@ public class HawsaCompassActivity extends AppCompatActivity {
             // Separator
             if (i < 4) {
                 View separator = new View(this);
-                separator.setBackgroundColor(0xFF1E293B);
+                separator.setBackgroundColor(COLOR_SEPARATOR);
                 LinearLayout.LayoutParams sepParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, 1
-                );
-                sepParams.setMargins(48, 0, 0, 0);
+                        LinearLayout.LayoutParams.MATCH_PARENT, 1);
+                sepParams.setMargins(dp(48), 0, 0, 0);
                 separator.setLayoutParams(sepParams);
                 prayerTimesContainer.addView(row);
                 prayerTimesContainer.addView(separator);
@@ -446,9 +593,36 @@ public class HawsaCompassActivity extends AppCompatActivity {
         }
     }
 
-    private android.graphics.drawable.GradientDrawable createCircleDrawable(int color) {
-        android.graphics.drawable.GradientDrawable drawable = new android.graphics.drawable.GradientDrawable();
-        drawable.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+    // ===== Helpers =====
+
+    private int dp(int value) {
+        float density = getResources().getDisplayMetrics().density;
+        return (int) (value * density + 0.5f);
+    }
+
+    private LinearLayout createCard() {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(20), dp(16), dp(20), dp(16));
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(COLOR_CARD);
+        bg.setCornerRadius(dp(16));
+        bg.setStroke(dp(1), COLOR_SEPARATOR);
+        card.setBackground(bg);
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, dp(12), 0, 0);
+        card.setLayoutParams(params);
+
+        return card;
+    }
+
+    private GradientDrawable createCircleDrawable(int color) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.OVAL);
         drawable.setColor(color);
         return drawable;
     }
