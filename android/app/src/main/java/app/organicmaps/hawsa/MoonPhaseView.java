@@ -29,6 +29,19 @@ import java.util.Random;
  * - Subtle slow rotation of the star field
  * - Shadow/illumination animated appearance
  *
+ * PHYSICALLY ACCURATE TERMINATOR:
+ * The terminator (line between lit and dark) is the projection of a great circle
+ * on the Moon's sphere. Viewed from Earth, this projects to an ellipse whose
+ * semi-minor axis (x-offset) = r * cos(phase_angle), where phase_angle = 2*PI*p.
+ * This produces correct crescent, quarter, gibbous, and full/new shapes.
+ *
+ * Northern Hemisphere convention:
+ *   p=0.00 = new moon (all dark)
+ *   p=0.25 = first quarter (right half lit)
+ *   p=0.50 = full moon (all lit)
+ *   p=0.75 = last quarter (left half lit)
+ *   p=1.00 = new moon (all dark)
+ *
  * Theme: dark navy #0D1B2A background, gold #D4AF37 accents, white/blue moon
  */
 public class MoonPhaseView extends View {
@@ -339,20 +352,27 @@ public class MoonPhaseView extends View {
         }
     }
 
+    /**
+     * Draw the dark (shadow) overlay using the physically accurate terminator model.
+     *
+     * The terminator is the projection of the great circle dividing the Moon's
+     * lit and dark hemispheres. When projected onto the 2D disk, it forms an
+     * ellipse whose x-offset (semi-minor axis) = r * cos(phase_angle),
+     * where phase_angle = 2 * PI * p.
+     *
+     * This produces correct shapes for all phases:
+     *   New (p=0):     terminX = +r  → all dark
+     *   1st Qtr (p=.25): terminX = 0  → right half lit
+     *   Full (p=.5):   terminX = -r → all lit
+     *   3rd Qtr (p=.75): terminX = 0  → left half lit
+     *   New (p=1):     terminX = +r  → all dark
+     *
+     * Northern Hemisphere convention: waxing = right side lit, waning = left side lit.
+     */
     private void drawTerminator(Canvas canvas, float radius, float scale) {
-        // Phase: 0=new (all dark), 0.25=first quarter, 0.5=full (all lit), 0.75=last quarter, 1.0=new
-        // Uses unified terminator geometry: the terminator is an ellipse whose
-        // semi-minor axis varies linearly from -r (new) through 0 (quarter) to +r (full).
-        // This produces physically realistic crescent, quarter, gibbous, and full shapes.
         float p = animatedPhase;
 
-        // Compute terminator X offset: -r at new moon, 0 at quarter, +r at full moon
-        // For waxing (p=0..0.5): terminatorX = r * (2*p - 1)
-        // For waning (p=0.5..1): terminatorX = r * (1 - 2*(p-0.5)) = r * (2 - 2*p)
-        double terminatorX = radius * (2.0 * p - 1.0);  // works for full 0..1 range
-        boolean isWaxing = p <= 0.5;
-
-        // Illumination from phase (for edge cases)
+        // Compute illumination from phase (for edge case handling)
         double illum = 0.5 * (1.0 - Math.cos(2.0 * Math.PI * p));
 
         if (illum >= 0.99) {
@@ -365,26 +385,34 @@ public class MoonPhaseView extends View {
             return;
         }
 
-        // Build the dark (shadow) path using terminator arc + limb arc
+        // Physically accurate terminator position
+        // The terminator is the projection of the great circle dividing lit and dark hemispheres.
+        // For waxing phases (p <= 0.5), the visible terminator semi-ellipse is at
+        //   x = cx + r*cos(2PIp)*cos(theta)
+        // For waning phases (p > 0.5), the visible terminator is on the opposite side:
+        //   x = cx - r*cos(2PIp)*cos(theta)  (i.e., the sign flips)
+        // This ensures correct crescent/gibbous shapes for all phases.
+        boolean isWaxing = (p <= 0.5f);
+        double signedTerminatorX = (isWaxing ? 1.0 : -1.0) * radius * Math.cos(2.0 * Math.PI * p);
+
+        // Build the dark (shadow) path
         Path darkPath = new Path();
 
-        // The dark side is opposite to the lit side:
-        // Waxing: right side lit → left side dark → left limb + terminator
-        // Waning: left side lit → right side dark → right limb + terminator
-
+        // Start at top of moon disk
         darkPath.moveTo(viewCenterX, viewCenterY - radius);
 
-        // Walk along the dark limb from top to bottom
-        int steps = 40;
+        // Draw the dark limb arc (the outer edge on the dark side)
         if (isWaxing) {
-            // Dark limb is the LEFT side (arc from -90° to +90° going counter-clockwise = 180° sweep left)
+            // Waxing: right side is lit, dark limb is LEFT side
+            // Left limb: arc from top (-90°) to bottom (+90°) going counter-clockwise (-180° sweep)
             darkPath.arcTo(
                 viewCenterX - radius, viewCenterY - radius,
                 viewCenterX + radius, viewCenterY + radius,
                 -90, -180, true
             );
         } else {
-            // Dark limb is the RIGHT side (arc from -90° to +90° going clockwise = 180° sweep right)
+            // Waning: left side is lit, dark limb is RIGHT side
+            // Right limb: arc from top (-90°) to bottom (+90°) going clockwise (+180° sweep)
             darkPath.arcTo(
                 viewCenterX - radius, viewCenterY - radius,
                 viewCenterX + radius, viewCenterY + radius,
@@ -393,10 +421,13 @@ public class MoonPhaseView extends View {
         }
 
         // Walk along the terminator from bottom back to top
+        // The terminator is an ellipse: x = cx + terminatorX * cos(angle), y = cy + r * sin(angle)
+        // angle goes from +90° (bottom) to -90° (top)
+        int steps = 40;
         for (int i = steps; i >= 0; i--) {
-            float angle = -90f + (180f * i / steps);  // -90 to 90 (bottom to top)
+            float angle = -90f + (180f * i / steps);
             float y = viewCenterY + radius * (float) Math.sin(Math.toRadians(angle));
-            float xTerminator = viewCenterX + (float) (terminatorX * Math.cos(Math.toRadians(angle)));
+            float xTerminator = viewCenterX + (float) (signedTerminatorX * Math.cos(Math.toRadians(angle)));
             darkPath.lineTo(xTerminator, y);
         }
 
