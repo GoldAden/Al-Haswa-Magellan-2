@@ -22,7 +22,7 @@ import java.util.Locale;
 /**
  * Modern phone-style compass with dense tick marks, full 0-360 degree labels,
  * N/E/S/W Latin + Arabic cardinal labels, prominent fixed top indicator,
- * clear Qibla pointer, and very smooth sensor smoothing.
+ * clear Qibla pointer, compass needle hands inside the dial, and very smooth sensor smoothing.
  */
 public class CompassView extends View implements SensorEventListener {
 
@@ -38,10 +38,8 @@ public class CompassView extends View implements SensorEventListener {
     private static final int COLOR_TICK_30DEG = 0xFF424242;
     private static final int COLOR_DEGREE_TEXT = 0xFF757575;
     private static final int COLOR_DEGREE_TEXT_MAJOR = 0xFF424242;
-    private static final int COLOR_NORTH = 0xFFD32F2F;
-    private static final int COLOR_EAST = 0xFF1976D2;
-    private static final int COLOR_SOUTH = 0xFFF57C00;
-    private static final int COLOR_WEST = 0xFF388E3C;
+    private static final int COLOR_NORTH = 0xFFD32F2F;           // N stays red
+    private static final int COLOR_OTHER_CARDINAL = 0xFFB0BEC5;  // W, S, E uniform silver-blue
     private static final int COLOR_CARDINAL_LATIN = 0xFFFFFFFF;
     private static final int COLOR_CARDINAL_AR = 0xFFFFFFFF;
     private static final int COLOR_QIBLA_ARROW = 0xFFD4AF37;
@@ -54,6 +52,10 @@ public class CompassView extends View implements SensorEventListener {
     private static final int COLOR_DIRECTION_LABEL = 0xFF757575;
     private static final int COLOR_CROSSHAIR = 0xFFBDBDBD;
 
+    // Needle colors
+    private static final int COLOR_NEEDLE_NORTH = 0xFFD32F2F;  // Red north half
+    private static final int COLOR_NEEDLE_SOUTH = 0xFF78909C;  // Blue-grey south half
+
     // Paints
     private Paint dialFacePaint;
     private Paint dialRingPaint;
@@ -63,7 +65,7 @@ public class CompassView extends View implements SensorEventListener {
     private Paint tick30Paint;
     private Paint degreeTextPaint;
     private Paint degreeTextMajorPaint;
-    private Paint cardinalBgN, cardinalBgE, cardinalBgS, cardinalBgW;
+    private Paint cardinalBgN, cardinalBgOther;
     private Paint cardinalLatinPaint;
     private Paint cardinalArN, cardinalArE, cardinalArS, cardinalArW;
     private Paint qiblaArrowPaint;
@@ -77,6 +79,11 @@ public class CompassView extends View implements SensorEventListener {
     private Paint centerDotPaint;
     private Paint centerRingPaint;
     private Paint kaabaPaint;
+    // Needle paints
+    private Paint needleNorthPaint;
+    private Paint needleSouthPaint;
+    private Paint needleOutlinePaint;
+    private Paint needlePivotPaint;
 
     private SensorManager sensorManager;
     private Sensor accelerometer;
@@ -89,12 +96,11 @@ public class CompassView extends View implements SensorEventListener {
     private float smoothAzimuth = 0f;
 
     // Smoothing parameters
-    private static final float EMA_FACTOR = 0.08f;  // Low-pass EMA — very smooth
-    private static final float NOISE_THRESHOLD = 0.5f; // Ignore changes < 0.5°
-    private static final long INVALIDATE_INTERVAL_MS = 33; // ~30fps max
+    private static final float EMA_FACTOR = 0.08f;
+    private static final float NOISE_THRESHOLD = 0.5f;
+    private static final long INVALIDATE_INTERVAL_MS = 33;
 
     private long lastInvalidateTime = 0;
-    // Ring buffer for averaging (5-sample window)
     private static final int SMOOTH_WINDOW = 5;
     private float[] smoothBuffer = new float[SMOOTH_WINDOW];
     private int smoothBufferIdx = 0;
@@ -131,7 +137,7 @@ public class CompassView extends View implements SensorEventListener {
         dialBorderPaint.setStrokeWidth(4f);
         dialBorderPaint.setColor(COLOR_DIAL_BORDER);
 
-        // Dense tick paints — modern compass style
+        // Dense tick paints
         tick2Paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         tick2Paint.setStyle(Paint.Style.STROKE);
         tick2Paint.setStrokeWidth(0.8f);
@@ -147,7 +153,7 @@ public class CompassView extends View implements SensorEventListener {
         tick30Paint.setStrokeWidth(2.5f);
         tick30Paint.setColor(COLOR_TICK_30DEG);
 
-        // Degree text (every 10°)
+        // Degree text
         degreeTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         degreeTextPaint.setTextSize(11f);
         degreeTextPaint.setColor(COLOR_DEGREE_TEXT);
@@ -158,24 +164,16 @@ public class CompassView extends View implements SensorEventListener {
         degreeTextMajorPaint.setColor(COLOR_DEGREE_TEXT_MAJOR);
         degreeTextMajorPaint.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
 
-        // Cardinal background circles
+        // Cardinal background circles — N red, others uniform silver-blue
         cardinalBgN = new Paint(Paint.ANTI_ALIAS_FLAG);
         cardinalBgN.setStyle(Paint.Style.FILL);
         cardinalBgN.setColor(COLOR_NORTH);
 
-        cardinalBgE = new Paint(Paint.ANTI_ALIAS_FLAG);
-        cardinalBgE.setStyle(Paint.Style.FILL);
-        cardinalBgE.setColor(COLOR_EAST);
+        cardinalBgOther = new Paint(Paint.ANTI_ALIAS_FLAG);
+        cardinalBgOther.setStyle(Paint.Style.FILL);
+        cardinalBgOther.setColor(COLOR_OTHER_CARDINAL);
 
-        cardinalBgS = new Paint(Paint.ANTI_ALIAS_FLAG);
-        cardinalBgS.setStyle(Paint.Style.FILL);
-        cardinalBgS.setColor(COLOR_SOUTH);
-
-        cardinalBgW = new Paint(Paint.ANTI_ALIAS_FLAG);
-        cardinalBgW.setStyle(Paint.Style.FILL);
-        cardinalBgW.setColor(COLOR_WEST);
-
-        // Latin cardinal labels (N/E/S/W) — large and clear
+        // Latin cardinal labels
         cardinalLatinPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         cardinalLatinPaint.setTextSize(22f);
         cardinalLatinPaint.setTypeface(Typeface.create("sans-serif-bold", Typeface.BOLD));
@@ -202,7 +200,7 @@ public class CompassView extends View implements SensorEventListener {
         cardinalArW.setTypeface(Typeface.create("sans-serif", Typeface.NORMAL));
         cardinalArW.setColor(COLOR_CARDINAL_AR);
 
-        // Qibla — larger and more visible
+        // Qibla
         qiblaArrowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         qiblaArrowPaint.setStyle(Paint.Style.FILL);
         qiblaArrowPaint.setColor(COLOR_QIBLA_ARROW);
@@ -220,7 +218,7 @@ public class CompassView extends View implements SensorEventListener {
         kaabaPaint.setStyle(Paint.Style.FILL);
         kaabaPaint.setColor(COLOR_QIBLA_ARROW);
 
-        // Fixed red north triangle — larger and more prominent
+        // Fixed north indicator
         fixedNorthPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         fixedNorthPaint.setStyle(Paint.Style.FILL);
         fixedNorthPaint.setColor(COLOR_FIXED_NORTH);
@@ -256,6 +254,24 @@ public class CompassView extends View implements SensorEventListener {
         centerRingPaint.setStyle(Paint.Style.STROKE);
         centerRingPaint.setStrokeWidth(2f);
         centerRingPaint.setColor(0xFFBDBDBD);
+
+        // Compass needle paints
+        needleNorthPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        needleNorthPaint.setStyle(Paint.Style.FILL);
+        needleNorthPaint.setColor(COLOR_NEEDLE_NORTH);
+
+        needleSouthPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        needleSouthPaint.setStyle(Paint.Style.FILL);
+        needleSouthPaint.setColor(COLOR_NEEDLE_SOUTH);
+
+        needleOutlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        needleOutlinePaint.setStyle(Paint.Style.STROKE);
+        needleOutlinePaint.setStrokeWidth(1.5f);
+        needleOutlinePaint.setColor(0xFF424242);
+
+        needlePivotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        needlePivotPaint.setStyle(Paint.Style.FILL);
+        needlePivotPaint.setColor(0xFFB0BEC5);
 
         sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager != null) {
@@ -310,16 +326,14 @@ public class CompassView extends View implements SensorEventListener {
                 float azimuth = (float) Math.toDegrees(orientationValues[0]);
                 if (azimuth < 0) azimuth += 360;
 
-                // Noise gate: ignore changes smaller than threshold
                 float diff = Math.abs(azimuth - targetAzimuth);
                 if (diff > 180) diff = 360 - diff;
                 if (diff < NOISE_THRESHOLD && smoothBufferCount >= SMOOTH_WINDOW) {
-                    return; // Ignore sensor noise
+                    return;
                 }
 
                 targetAzimuth = azimuth;
 
-                // EMA (Exponential Moving Average) for smooth interpolation
                 float emaDiff = targetAzimuth - smoothAzimuth;
                 if (emaDiff > 180) emaDiff -= 360;
                 if (emaDiff < -180) emaDiff += 360;
@@ -327,12 +341,10 @@ public class CompassView extends View implements SensorEventListener {
                 if (smoothAzimuth < 0) smoothAzimuth += 360;
                 if (smoothAzimuth >= 360) smoothAzimuth -= 360;
 
-                // Additional ring-buffer averaging for extra smoothness
                 smoothBuffer[smoothBufferIdx] = smoothAzimuth;
                 smoothBufferIdx = (smoothBufferIdx + 1) % SMOOTH_WINDOW;
                 smoothBufferCount = Math.min(smoothBufferCount + 1, SMOOTH_WINDOW);
 
-                float sum = 0;
                 float sumSin = 0, sumCos = 0;
                 for (int i = 0; i < smoothBufferCount; i++) {
                     double rad = Math.toRadians(smoothBuffer[i]);
@@ -342,7 +354,6 @@ public class CompassView extends View implements SensorEventListener {
                 currentAzimuth = (float) Math.toDegrees(Math.atan2(sumSin / smoothBufferCount, sumCos / smoothBufferCount));
                 if (currentAzimuth < 0) currentAzimuth += 360;
 
-                // Throttle invalidate to ~30fps
                 long now = System.currentTimeMillis();
                 if (now - lastInvalidateTime > INVALIDATE_INTERVAL_MS) {
                     lastInvalidateTime = now;
@@ -375,7 +386,7 @@ public class CompassView extends View implements SensorEventListener {
         int h = getHeight();
         float cx = w / 2f;
         float cy = h / 2f;
-        float outerRadius = Math.min(cx, cy) - 28f; // space for prominent fixed indicator
+        float outerRadius = Math.min(cx, cy) - 28f;
         float dialRadius = outerRadius - 4f;
 
         // Dark background matching app theme
@@ -383,7 +394,6 @@ public class CompassView extends View implements SensorEventListener {
 
         // === Light/white dial face ===
         canvas.drawCircle(cx, cy, dialRadius, dialFacePaint);
-        // Thin ring
         canvas.drawCircle(cx, cy, dialRadius, dialRingPaint);
 
         // === Rotating dial elements ===
@@ -391,12 +401,12 @@ public class CompassView extends View implements SensorEventListener {
         canvas.rotate(-currentAzimuth, cx, cy);
 
         float tickOuter = dialRadius - 2f;
-        float tick2Inner = dialRadius - 8f;    // 2° ticks — very short
-        float tick10Inner = dialRadius - 14f;   // 10° ticks — medium
-        float tick30Inner = dialRadius - 20f;   // 30° ticks — long
-        float cardinalCenter = dialRadius - 38f;  // center of cardinal circles
-        float degreeTextY = dialRadius - 16f;     // degree number baseline
-        float degreeTextMajorY = dialRadius - 20f; // major degree number baseline
+        float tick2Inner = dialRadius - 8f;
+        float tick10Inner = dialRadius - 14f;
+        float tick30Inner = dialRadius - 20f;
+        float cardinalCenter = dialRadius - 38f;
+        float degreeTextY = dialRadius - 16f;
+        float degreeTextMajorY = dialRadius - 20f;
 
         // === Dense tick marks: every 2° ===
         for (int deg = 0; deg < 360; deg += 2) {
@@ -404,16 +414,9 @@ public class CompassView extends View implements SensorEventListener {
             boolean is10 = (deg % 10 == 0) && !is30;
             float inner;
             Paint p;
-            if (is30) {
-                inner = tick30Inner;
-                p = tick30Paint;
-            } else if (is10) {
-                inner = tick10Inner;
-                p = tick10Paint;
-            } else {
-                inner = tick2Inner;
-                p = tick2Paint;
-            }
+            if (is30) { inner = tick30Inner; p = tick30Paint; }
+            else if (is10) { inner = tick10Inner; p = tick10Paint; }
+            else { inner = tick2Inner; p = tick2Paint; }
 
             canvas.save();
             canvas.rotate(deg, cx, cy);
@@ -423,7 +426,7 @@ public class CompassView extends View implements SensorEventListener {
 
         // === Degree labels every 10° (skip cardinals at 0/90/180/270) ===
         for (int deg = 0; deg < 360; deg += 10) {
-            if (deg % 90 == 0) continue; // cardinals go here
+            if (deg % 90 == 0) continue;
 
             canvas.save();
             canvas.rotate(deg, cx, cy);
@@ -432,7 +435,6 @@ public class CompassView extends View implements SensorEventListener {
             Paint tp = is30 ? degreeTextMajorPaint : degreeTextPaint;
             String label = String.valueOf(deg);
 
-            // Rotate text back upright for readability
             canvas.save();
             canvas.rotate(-deg, cx, cy - (is30 ? degreeTextMajorY : degreeTextY));
             float tw = tp.measureText(label);
@@ -445,12 +447,12 @@ public class CompassView extends View implements SensorEventListener {
         // === Cardinal direction labels: N/E/S/W + Arabic ===
         String[] latinLabels = {"N", "E", "S", "W"};
         String[] arabicLabels = {
-            "\u0634\u0645\u0627\u0644",  // شمال
-            "\u0634\u0631\u0642",       // شرق
-            "\u062C\u0646\u0648\u0628",  // جنوب
-            "\u063A\u0631\u0628"        // غرب
+            "\u0634\u0645\u0627\u0644",   // شمال
+            "\u0634\u0631\u0642",        // شرق
+            "\u062C\u0646\u0648\u0628",   // جنوب
+            "\u063A\u0631\u0628"         // غرب
         };
-        Paint[] bgPaints = {cardinalBgN, cardinalBgE, cardinalBgS, cardinalBgW};
+        Paint[] bgPaints = {cardinalBgN, cardinalBgOther, cardinalBgOther, cardinalBgOther};
         float circleRadius = 24f;
 
         for (int i = 0; i < 4; i++) {
@@ -460,14 +462,14 @@ public class CompassView extends View implements SensorEventListener {
             // Colored background circle
             canvas.drawCircle(cx, cy - cardinalCenter, circleRadius, bgPaints[i]);
 
-            // Latin letter (large, white, bold) — rotated back upright for readability
+            // Latin letter (large, white, bold)
             canvas.save();
             canvas.rotate(-(i * 90 - currentAzimuth), cx, cy - cardinalCenter - 3f);
             float lw = cardinalLatinPaint.measureText(latinLabels[i]);
             canvas.drawText(latinLabels[i], cx - lw / 2, cy - cardinalCenter + cardinalLatinPaint.descent() - 3f, cardinalLatinPaint);
             canvas.restore();
 
-            // Arabic label (small, below latin) — rotated back upright
+            // Arabic label (small, below latin)
             canvas.save();
             canvas.rotate(-(i * 90 - currentAzimuth), cx, cy - cardinalCenter + 13f);
             Paint arPaint = (i == 0) ? cardinalArN : (i == 1) ? cardinalArE : (i == 2) ? cardinalArS : cardinalArW;
@@ -478,16 +480,42 @@ public class CompassView extends View implements SensorEventListener {
             canvas.restore();
         }
 
-        // === Qibla indicator — larger and more visible ===
+        // === Compass Needle / Hands inside the dial ===
+        // The needle rotates with the dial, pointing geographic N/S
+        float needleLength = dialRadius - 52f; // Leave room for cardinal circles
+        float needleWidth = 10f;
+
+        // North-pointing half (red, pointed)
+        Path northNeedle = new Path();
+        northNeedle.moveTo(cx, cy - needleLength);           // tip (toward N)
+        northNeedle.lineTo(cx - needleWidth, cy);             // left base
+        northNeedle.lineTo(cx + needleWidth, cy);             // right base
+        northNeedle.close();
+        canvas.drawPath(northNeedle, needleNorthPaint);
+        canvas.drawPath(northNeedle, needleOutlinePaint);
+
+        // South-pointing half (blue-grey, pointed)
+        Path southNeedle = new Path();
+        southNeedle.moveTo(cx, cy + needleLength);           // tip (toward S)
+        southNeedle.lineTo(cx - needleWidth, cy);             // left base
+        southNeedle.lineTo(cx + needleWidth, cy);             // right base
+        southNeedle.close();
+        canvas.drawPath(southNeedle, needleSouthPaint);
+        canvas.drawPath(southNeedle, needleOutlinePaint);
+
+        // Needle pivot circle at center
+        float pivotR = 10f;
+        canvas.drawCircle(cx, cy, pivotR, needlePivotPaint);
+        canvas.drawCircle(cx, cy, pivotR, needleOutlinePaint);
+
+        // === Qibla indicator ===
         if (qiblaBearing > 0) {
             canvas.save();
             canvas.rotate((float) qiblaBearing, cx, cy);
 
-            // Glow circle
             float glowR = 20f;
             canvas.drawCircle(cx, cy - dialRadius + 6f, glowR, qiblaGlowPaint);
 
-            // Larger Qibla arrow pointing outward
             Path qPath = new Path();
             float qBase = dialRadius - 12f;
             float qTip = dialRadius + 6f;
@@ -497,17 +525,14 @@ public class CompassView extends View implements SensorEventListener {
             qPath.close();
             canvas.drawPath(qPath, qiblaArrowPaint);
 
-            // Kaaba cube icon at tip
             float ks = 5f;
             RectF kaabaRect = new RectF(cx - ks, cy - qTip - ks - 2f, cx + ks, cy - qTip + ks - 2f);
             canvas.drawRect(kaabaRect, kaabaPaint);
-            // Kaaba stripe
             Paint kaabaStripe = new Paint(Paint.ANTI_ALIAS_FLAG);
             kaabaStripe.setStyle(Paint.Style.FILL);
             kaabaStripe.setColor(0xFFB8860B);
             canvas.drawRect(new RectF(cx - ks, cy - qTip - 1f, cx + ks, cy - qTip + 1f), kaabaStripe);
 
-            // "القبلة" label — rotated back upright for readability
             canvas.save();
             canvas.rotate(-(float) qiblaBearing, cx, cy - qBase + 18f);
             String qLabel = "\u0627\u0644\u0642\u0628\u0644\u0629";
@@ -522,16 +547,14 @@ public class CompassView extends View implements SensorEventListener {
 
         // === Fixed elements ===
 
-        // Prominent fixed red north indicator at top — larger triangle
+        // Prominent fixed red north indicator at top
         float nBaseY = cy - outerRadius - 2f;
-        float nTipY = nBaseY - 4f;
         float nTopY = nBaseY - 18f;
         Path nPath = new Path();
         nPath.moveTo(cx - 14f, nBaseY + 4f);
         nPath.lineTo(cx, nTopY);
         nPath.lineTo(cx + 14f, nBaseY + 4f);
         nPath.close();
-        // Glow
         Path nGlowPath = new Path();
         nGlowPath.moveTo(cx - 18f, nBaseY + 8f);
         nGlowPath.lineTo(cx, nTopY - 4f);
@@ -540,7 +563,7 @@ public class CompassView extends View implements SensorEventListener {
         canvas.drawPath(nGlowPath, northGlowPaint);
         canvas.drawPath(nPath, fixedNorthPaint);
 
-        // Thin fixed line at top (modern compass reference line)
+        // Fixed reference line at top
         Paint fixedLinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         fixedLinePaint.setStyle(Paint.Style.STROKE);
         fixedLinePaint.setStrokeWidth(3f);
@@ -553,7 +576,7 @@ public class CompassView extends View implements SensorEventListener {
         canvas.drawLine(cx - crossLen, cy, cx + crossLen, cy, crosshairPaint);
         canvas.drawLine(cx, cy - crossLen, cx, cy + crossLen, crosshairPaint);
 
-        // Center circle + dot
+        // Center circle + dot (drawn on top of needle pivot)
         canvas.drawCircle(cx, cy, 8f, centerRingPaint);
         canvas.drawCircle(cx, cy, 4f, centerDotPaint);
 
