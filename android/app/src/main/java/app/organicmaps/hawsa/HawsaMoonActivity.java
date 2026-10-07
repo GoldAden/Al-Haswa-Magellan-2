@@ -32,6 +32,7 @@ import app.organicmaps.R;
  * Moon phase screen with beautiful animated phases, current phase info,
  * accurate rise/set times (Meeus/NOAA astronomical algorithms),
  * Hijri date, and realistic weekly moon icons.
+ * Status bar is visible (not immersive) matching the dark navy background.
  */
 public class HawsaMoonActivity extends AppCompatActivity {
 
@@ -50,16 +51,9 @@ public class HawsaMoonActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Fullscreen immersive mode
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            getWindow().setDecorFitsSystemWindows(false);
-        } else {
-            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        }
-
-        // === FIX: Status bar color matches background ===
+        // === Status bar VISIBLE with matching color (not immersive/hidden) ===
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
             getWindow().setStatusBarColor(COLOR_BG);
             getWindow().setNavigationBarColor(COLOR_BG);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -68,10 +62,10 @@ public class HawsaMoonActivity extends AppCompatActivity {
                 flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
                 decor.setSystemUiVisibility(flags);
             }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                getWindow().setDecorFitsSystemWindows(true);
+            }
         }
-
-        // Immersive sticky
-        hideSystemUI();
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
@@ -84,8 +78,11 @@ public class HawsaMoonActivity extends AppCompatActivity {
         LinearLayout rootLayout = new LinearLayout(this);
         rootLayout.setOrientation(LinearLayout.VERTICAL);
         rootLayout.setBackgroundColor(COLOR_BG);
-        rootLayout.setPadding(dp(20), dp(50), dp(20), dp(30));
+        rootLayout.setPadding(dp(20), dp(16), dp(20), dp(30));
         rootLayout.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        // Add top padding for status bar space
+        rootLayout.setPaddingRelative(dp(20), dp(12), dp(20), dp(30));
+        rootLayout.setClipToPadding(false);
 
         // === Back button + Title ===
         LinearLayout topBar = new LinearLayout(this);
@@ -105,7 +102,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         });
 
         TextView tvTitle = new TextView(this);
-        tvTitle.setText("\u0627\u0644\u0642\u0645\u0631");
+        tvTitle.setText("القمر");
         tvTitle.setTextSize(22);
         tvTitle.setTextColor(COLOR_GOLD);
         tvTitle.setTypeface(null, Typeface.BOLD);
@@ -134,7 +131,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         Calendar now = Calendar.getInstance(TimeZone.getTimeZone("Asia/Riyadh"));
         long timeMillis = now.getTimeInMillis();
 
-        // FIXED: Use correct MoonCalculator API
+        // Use correct MoonCalculator API
         double age = MoonCalculator.getLunarAge(timeMillis);
         double illum = MoonCalculator.getIllumination(timeMillis);
         // Phase fraction: 0=new, 0.5=full, 1.0=new again
@@ -147,7 +144,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
         LinearLayout infoCard = createCard();
 
-        // Phase name — use MoonCalculator.getPhaseNameArabic()
+        // Phase name
         TextView tvPhaseName = new TextView(this);
         tvPhaseName.setText(MoonCalculator.getPhaseNameArabic(age));
         tvPhaseName.setTextSize(20);
@@ -159,7 +156,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
         // Illumination
         TextView tvIllumination = new TextView(this);
-        tvIllumination.setText(String.format(Locale.US, "\u0627\u0644\u0625\u0636\u0627\u0621\u0629: %.0f%%", illum * 100));
+        tvIllumination.setText(String.format(Locale.US, "الإضاءة: %.0f%%", illum * 100));
         tvIllumination.setTextSize(16);
         tvIllumination.setTextColor(COLOR_TEXT);
         tvIllumination.setGravity(Gravity.CENTER);
@@ -168,7 +165,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
         // Moon age
         TextView tvAge = new TextView(this);
-        tvAge.setText(String.format(Locale.US, "\u0639\u0645\u0631 \u0627\u0644\u0642\u0645\u0631: %.1f \u064A\u0648\u0645", age));
+        tvAge.setText(String.format(Locale.US, "عمر القمر: %.1f يوم", age));
         tvAge.setTextSize(14);
         tvAge.setTextColor(COLOR_TEXT_DIM);
         tvAge.setGravity(Gravity.CENTER);
@@ -178,7 +175,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         // Separator
         infoCard.addView(createSeparator());
 
-        // Rise / Set times — FIXED: Use MoonCalculator.getMoonriseTime/getMoonsetTime
+        // Rise / Set times
         LinearLayout timesGrid = new LinearLayout(this);
         timesGrid.setOrientation(LinearLayout.HORIZONTAL);
         timesGrid.setGravity(Gravity.CENTER);
@@ -187,20 +184,20 @@ public class HawsaMoonActivity extends AppCompatActivity {
         String riseTime = MoonCalculator.getMoonriseTime(timeMillis);
         String setTime = MoonCalculator.getMoonsetTime(timeMillis);
 
-        timesGrid.addView(createTimeColumn("\u0627\u0644\u0637\u0644\u0648\u0639", riseTime));
-        timesGrid.addView(createTimeColumn("\u0627\u0644\u063A\u0631\u0648\u0628", setTime));
+        timesGrid.addView(createTimeColumn("الطلوع", riseTime));
+        timesGrid.addView(createTimeColumn("الغروب", setTime));
 
         infoCard.addView(timesGrid);
 
         // Separator
         infoCard.addView(createSeparator());
 
-        // Hijri date — FIXED: Use HijriDateCalculator.calculateHijri() + formatHijriArabic()
+        // Hijri date
         HijriDateCalculator.HijriDate hijriDate = HijriDateCalculator.calculateHijri(now);
         String hijriStr = HijriDateCalculator.formatHijriArabic(hijriDate);
 
         TextView tvHijri = new TextView(this);
-        tvHijri.setText("\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0647\u062C\u0631\u064A: " + hijriStr);
+        tvHijri.setText("التاريخ الهجري: " + hijriStr);
         tvHijri.setTextSize(16);
         tvHijri.setTextColor(COLOR_TEXT);
         tvHijri.setGravity(Gravity.CENTER);
@@ -211,7 +208,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         // Gregorian date
         SimpleDateFormat gregFmt = new SimpleDateFormat("EEEE, d MMMM yyyy", new Locale("ar"));
         TextView tvGregorian = new TextView(this);
-        tvGregorian.setText("\u0627\u0644\u062A\u0627\u0631\u064A\u062E \u0627\u0644\u0645\u064A\u0644\u0627\u062F\u064A: " + gregFmt.format(now.getTime()));
+        tvGregorian.setText("التاريخ الميلادي: " + gregFmt.format(now.getTime()));
         tvGregorian.setTextSize(13);
         tvGregorian.setTextColor(COLOR_TEXT_DIM);
         tvGregorian.setGravity(Gravity.CENTER);
@@ -225,14 +222,13 @@ public class HawsaMoonActivity extends AppCompatActivity {
         weeklyCard.setPadding(dp(16), dp(16), dp(16), dp(16));
 
         TextView tvWeeklyTitle = new TextView(this);
-        tvWeeklyTitle.setText("\u0623\u0637\u0648\u0627\u0631 \u0627\u0644\u0642\u0645\u0631 \u0647\u0630\u0627 \u0627\u0644\u0623\u0633\u0628\u0648\u0639");
+        tvWeeklyTitle.setText("أطوار القمر هذا الأسبوع");
         tvWeeklyTitle.setTextSize(15);
         tvWeeklyTitle.setTextColor(COLOR_GOLD);
         tvWeeklyTitle.setTypeface(null, Typeface.BOLD);
         tvWeeklyTitle.setPadding(0, 0, 0, dp(12));
         weeklyCard.addView(tvWeeklyTitle);
 
-        // FIXED: Use MoonCalculator.getWeeklyMoonInfo() returning List<MoonDayInfo>
         List<MoonCalculator.MoonDayInfo> weekly = MoonCalculator.getWeeklyMoonInfo();
 
         LinearLayout weeklyStrip = new LinearLayout(this);
@@ -255,7 +251,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         dayLabels.setOrientation(LinearLayout.HORIZONTAL);
         dayLabels.setGravity(Gravity.CENTER);
 
-        String[] shortDayNames = {"\u0623\u062D", "\u0625\u062B", "\u062B\u0644", "\u0623\u0631", "\u062E\u0645", "\u062C\u0645", "\u0633\u0628"};
+        String[] shortDayNames = {"أح", "إث", "ثل", "أر", "خم", "جم", "سب"};
 
         for (int i = 0; i < weekly.size() && i < 7; i++) {
             MoonCalculator.MoonDayInfo dayInfo = weekly.get(i);
@@ -277,7 +273,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
         weeklyDetails.setOrientation(LinearLayout.VERTICAL);
         weeklyDetails.setPadding(0, dp(12), 0, 0);
 
-        String[] arabicDays = {"\u0627\u0644\u0623\u062D\u062F", "\u0627\u0644\u0627\u062B\u0646\u064A\u0646", "\u0627\u0644\u062B\u0644\u0627\u062B\u0627\u0621", "\u0627\u0644\u0623\u0631\u0628\u0639\u0627\u0621", "\u0627\u0644\u062E\u0645\u064A\u0633", "\u0627\u0644\u062C\u0645\u0639\u0629", "\u0627\u0644\u0633\u0628\u062A"};
+        String[] arabicDays = {"الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"};
 
         for (int i = 0; i < weekly.size() && i < 7; i++) {
             MoonCalculator.MoonDayInfo dayInfo = weekly.get(i);
@@ -304,7 +300,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
             // Phase name + illumination
             TextView tvPhaseInfo = new TextView(this);
-            tvPhaseInfo.setText(String.format(Locale.US, "%s \u00B7 %.0f%%", dayInfo.phaseName, dayInfo.illumination * 100));
+            tvPhaseInfo.setText(String.format(Locale.US, "%s · %.0f%%", dayInfo.phaseName, dayInfo.illumination * 100));
             tvPhaseInfo.setTextSize(11);
             tvPhaseInfo.setTextColor(COLOR_TEXT_DIM);
             LinearLayout.LayoutParams phaseParams = new LinearLayout.LayoutParams(
@@ -315,7 +311,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
             // Rise/Set
             TextView tvTimes = new TextView(this);
-            String timesStr = String.format(Locale.US, "\u0637 %s | \u063A %s", dayInfo.moonrise, dayInfo.moonset);
+            String timesStr = String.format(Locale.US, "ط %s | غ %s", dayInfo.moonrise, dayInfo.moonset);
             tvTimes.setText(timesStr);
             tvTimes.setTextSize(11);
             tvTimes.setTextColor(i == 0 ? 0xFFD4AF37 : 0xFFCE93D8);
@@ -342,7 +338,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
 
         // === Designer credit ===
         TextView tvCredit = new TextView(this);
-        tvCredit.setText("\u062A\u0645 \u062A\u0635\u0645\u064A\u0645 \u0647\u0630\u0627 \u0627\u0644\u062A\u0637\u0628\u064A\u0642 \u0645\u0646 \u0642\u0628\u0644 \u0623\u0635\u064A\u0644 \u0635\u0627\u062F\u0642");
+        tvCredit.setText("تم تصميم هذا التطبيق من قبل أصيل صادق");
         tvCredit.setTextSize(10);
         tvCredit.setTextColor(0xFF415A77);
         tvCredit.setGravity(Gravity.CENTER);
@@ -356,7 +352,6 @@ public class HawsaMoonActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        hideSystemUI();
         if (moonPhaseView != null) {
             moonPhaseView.startAllAnimations();
         }
@@ -367,25 +362,6 @@ public class HawsaMoonActivity extends AppCompatActivity {
         super.onPause();
         if (moonPhaseView != null) {
             moonPhaseView.stopAllAnimations();
-        }
-    }
-
-    private void hideSystemUI() {
-        View decorView = getWindow().getDecorView();
-        decorView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            hideSystemUI();
         }
     }
 
@@ -454,18 +430,15 @@ public class HawsaMoonActivity extends AppCompatActivity {
     }
 
     /**
-     * Create a realistic moon icon for the weekly strip using the same
-     * terminator algorithm as MoonPhaseView (not half-and-half).
+     * Create a realistic moon icon for the weekly strip using proper
+     * terminator algorithm matching MoonPhaseView.
      *
-     * Phase mapping (same as MoonPhaseView.drawTerminator):
+     * Phase mapping:
      *   0.00 = new moon (all dark)
      *   0.25 = first quarter (right half lit)
      *   0.50 = full moon (all lit)
      *   0.75 = last quarter (left half lit)
      *   1.00 = new moon (all dark)
-     *
-     * Waxing (0-0.5): right side lit, dark moves from right to left
-     * Waning (0.5-1): left side lit, dark moves from left to right
      */
     @SuppressLint("ViewConstructor")
     private View createRealisticDayMoonIcon(float phase, float illumination, boolean isToday) {
@@ -496,9 +469,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
                 if (p <= 0.5f) {
                     // Waxing: right side lit, dark moves from right to left
                     darkPath.moveTo(cx, cy - r);
-                    // Right arc (lit edge of moon)
                     darkPath.arcTo(cx - r, cy - r, cx + r, cy + r, -90, -180, true);
-                    // Terminator curve
                     if (p < 0.25f) {
                         // Crescent: terminator on right side of center (concave right)
                         float curveFactor = (0.25f - p) / 0.25f;
@@ -519,13 +490,11 @@ public class HawsaMoonActivity extends AppCompatActivity {
                     darkPath.close();
                 } else {
                     // Waning: left side lit, dark moves from left to right
-                    float wp = p - 0.5f; // 0 at full, 0.5 at new
+                    float wp = p - 0.5f;
                     darkPath.moveTo(cx, cy - r);
-                    // Left arc (lit edge)
                     darkPath.arcTo(cx - r, cy - r, cx + r, cy + r, -90, 180, false);
-                    // Terminator curve
                     if (wp < 0.25f) {
-                        // Waning gibbous: terminator on right of center (concave right)
+                        // Waning gibbous: terminator on right of center
                         float curveFactor = 1 - wp / 0.25f;
                         for (float angle = 90; angle >= -90; angle -= 5) {
                             float y = cy + r * (float) Math.sin(Math.toRadians(angle));
@@ -533,7 +502,7 @@ public class HawsaMoonActivity extends AppCompatActivity {
                             darkPath.lineTo(x, y);
                         }
                     } else {
-                        // Waning crescent: terminator on left of center (concave left)
+                        // Waning crescent: terminator on left of center
                         float curveFactor = 1 - (wp - 0.25f) / 0.25f;
                         for (float angle = 90; angle >= -90; angle -= 5) {
                             float y = cy + r * (float) Math.sin(Math.toRadians(angle));
