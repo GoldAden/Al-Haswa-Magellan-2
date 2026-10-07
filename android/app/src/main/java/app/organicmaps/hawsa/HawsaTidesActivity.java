@@ -57,6 +57,10 @@ public class HawsaTidesActivity extends AppCompatActivity {
     private boolean locationAcquired = false;
     private int selectedDayOffset = 0;
 
+    // GPS dialog tracking — dismiss on single press, auto-dismiss when GPS re-enabled
+    private AlertDialog gpsDialog;
+    private boolean gpsPromptDismissed = false;
+
     private final LocationListener locationListener = new LocationListener() {
         @Override
         public void onLocationChanged(@NonNull Location location) {
@@ -72,12 +76,16 @@ public class HawsaTidesActivity extends AppCompatActivity {
 
         @Override
         public void onProviderEnabled(String provider) {
+            // Auto-dismiss GPS prompt when user returns from Settings with GPS enabled
+            dismissGpsDialog();
             requestLocationUpdates();
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-            showGPSPrompt();
+            if (!gpsPromptDismissed) {
+                showGPSPrompt();
+            }
         }
     };
 
@@ -99,8 +107,6 @@ public class HawsaTidesActivity extends AppCompatActivity {
         setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_hawsa_tides);
 
-        // Match existing layout IDs: btn_tides_back, tv_tides_title, tv_station_name,
-        // tide_chart_view, days_container, tv_weekly_summary
         btnBack = findViewById(R.id.btn_tides_back);
         tvTidesTitle = findViewById(R.id.tv_tides_title);
         tvTidesLocation = findViewById(R.id.tv_tides_location);
@@ -131,6 +137,14 @@ public class HawsaTidesActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Re-check GPS status — if GPS is now on, dismiss any lingering dialog
+        if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            dismissGpsDialog();
+            gpsPromptDismissed = false; // reset so it can show again if GPS gets disabled later
+            if (!locationAcquired) {
+                requestLocationUpdates();
+            }
+        }
         if (locationAcquired) {
             requestLocationUpdates();
         }
@@ -185,7 +199,6 @@ public class HawsaTidesActivity extends AppCompatActivity {
                         10000, 10, locationListener);
                 locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
                         10000, 10, locationListener);
-                // Get last known for faster initial fix
                 Location lastKnown = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
                 if (lastKnown != null) {
                     saveLocation(lastKnown);
@@ -243,7 +256,6 @@ public class HawsaTidesActivity extends AppCompatActivity {
         if (tvCurrentStatus == null) return;
         List<TideCalculator.TideEvent> todayEvents = TideCalculator.getDayTideEvents(Calendar.getInstance());
         if (todayEvents != null && !todayEvents.isEmpty()) {
-            // Find the most recent event to determine current state
             long now = System.currentTimeMillis();
             TideCalculator.TideEvent lastEvent = null;
             for (TideCalculator.TideEvent e : todayEvents) {
@@ -264,17 +276,44 @@ public class HawsaTidesActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Dismiss the GPS prompt dialog if it is currently showing.
+     */
+    private void dismissGpsDialog() {
+        if (gpsDialog != null && gpsDialog.isShowing()) {
+            try { gpsDialog.dismiss(); } catch (Exception ignored) {}
+            gpsDialog = null;
+        }
+    }
+
+    /**
+     * Show GPS enable prompt — dismissible on a single press of "\u0625\u0644\u063A\u0627\u0621",
+     * auto-dismissed when user returns from Settings with GPS enabled.
+     */
     private void showGPSPrompt() {
-        new AlertDialog.Builder(this, R.style.HawsaAlertDialog)
+        // Don't show again after user dismissed it
+        if (gpsPromptDismissed) return;
+        // Don't stack dialogs
+        dismissGpsDialog();
+
+        gpsDialog = new AlertDialog.Builder(this, R.style.HawsaAlertDialog)
                 .setTitle("\u062A\u0641\u0639\u064A\u0644 \u0627\u0644\u0645\u0648\u0642\u0639")
                 .setMessage("\u064A\u062C\u0628 \u062A\u0641\u0639\u064A\u0644 \u062E\u062F\u0645\u0629 \u0627\u0644\u0645\u0648\u0642\u0639 (GPS) \u0644\u062D\u0633\u0627\u0628 \u0627\u0644\u0645\u062F \u0648\u0627\u0644\u062C\u0632\u0631 \u0628\u062F\u0642\u0629 \u0628\u0646\u0627\u0621 \u0639\u0644\u0649 \u0623\u0642\u0631\u0628 \u0645\u062D\u0637\u0629 \u0628\u062D\u0631\u064A\u0629. \u0647\u0644 \u062A\u0631\u064A\u062F \u0627\u0644\u0630\u0647\u0627\u0628 \u0625\u0644\u0649 \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A\u061F")
                 .setPositiveButton("\u0641\u062A\u062D \u0627\u0644\u0625\u0639\u062F\u0627\u062F\u0627\u062A", (dialog, which) -> {
+                    gpsDialog = null;
                     try {
                         startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
                     } catch (Exception ignored) {}
                 })
-                .setNegativeButton("\u0625\u0644\u063A\u0627\u0621", null)
-                .setCancelable(false)
+                .setNegativeButton("\u0625\u0644\u063A\u0627\u0621", (dialog, which) -> {
+                    gpsDialog = null;
+                    gpsPromptDismissed = true; // Don't re-show after user dismissal
+                })
+                .setCancelable(true)  // Allow single-press dismiss (back button / tap outside)
+                .setOnCancelListener(dialog -> {
+                    gpsDialog = null;
+                    gpsPromptDismissed = true; // Back/tap-outside also counts as dismissal
+                })
                 .show();
     }
 
@@ -312,7 +351,6 @@ public class HawsaTidesActivity extends AppCompatActivity {
             int pillPaddingV = 10;
             pill.setPadding(pillPaddingH, pillPaddingV, pillPaddingH, pillPaddingV);
 
-            // Pill background
             android.graphics.drawable.GradientDrawable pillBg = new android.graphics.drawable.GradientDrawable();
             pillBg.setCornerRadius(20f);
             pillBg.setColor(selected ? 0xFFD4AF37 : 0xFF1E293B);
@@ -395,7 +433,6 @@ public class HawsaTidesActivity extends AppCompatActivity {
             sb.append("\n\n");
         }
 
-        // Build a summary TextView if not already present
         TextView summaryText = null;
         if (weeklyTidesContainer.getChildCount() > 0) {
             summaryText = (TextView) weeklyTidesContainer.getChildAt(0);
