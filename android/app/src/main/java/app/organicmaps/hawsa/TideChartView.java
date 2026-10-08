@@ -17,9 +17,18 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Modern tide chart with maritime styling.
- * ENLARGED tide time labels, height labels, hour axis labels,
- * and now-indicator label for readability.
+ * Modern tide chart with maritime styling for Aden, Yemen.
+ *
+ * Features:
+ *  - Gold curve with gradient fill on dark navy background
+ *  - Animated draw-in
+ *  - High/Low markers with smart label positioning
+ *    (time above peak, height below peak for HIGH;
+ *     time below trough, height above trough for LOW)
+ *  - Current time indicator with glow dot
+ *  - Rising/Falling badge
+ *  - All time labels use English AM/PM (NOT Arabic ص/م)
+ *  - Height unit label uses "m" (NOT Arabic "م")
  */
 public class TideChartView extends View {
 
@@ -47,6 +56,7 @@ public class TideChartView extends View {
     private float animProgress = 0f;
     private boolean animating = false;
 
+    // Theme colors
     private static final int COLOR_BG = 0xFF0F172A;
     private static final int COLOR_CURVE = 0xFFD4AF37;
     private static final int COLOR_FILL_TOP = 0x40D4AF37;
@@ -89,7 +99,7 @@ public class TideChartView extends View {
         gridPaint.setColor(COLOR_GRID);
         gridPaint.setPathEffect(new DashPathEffect(new float[]{4f, 4f}, 0));
 
-        // Height axis labels — ENLARGED to 24f
+        // Height axis labels
         labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         labelPaint.setTextSize(20f);
         labelPaint.setColor(COLOR_LABEL);
@@ -103,12 +113,12 @@ public class TideChartView extends View {
         currentTimePaint.setColor(COLOR_CURRENT);
         currentTimePaint.setPathEffect(new DashPathEffect(new float[]{6f, 3f}, 0));
 
-        // High/Low tide TIME labels — ENLARGED to 22f
+        // High/Low tide TIME labels
         highLowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         highLowPaint.setTextSize(22f);
         highLowPaint.setFakeBoldText(true);
 
-        // High/Low tide HEIGHT labels — ENLARGED to 18f
+        // High/Low tide HEIGHT labels
         heightLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         heightLabelPaint.setTextSize(18f);
         heightLabelPaint.setFakeBoldText(true);
@@ -125,13 +135,13 @@ public class TideChartView extends View {
         nowDotPaint.setStyle(Paint.Style.FILL);
         nowDotPaint.setColor(COLOR_CURRENT);
 
-        // Now indicator time label — ENLARGED to 18f
+        // Current time indicator label
         nowLabelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         nowLabelPaint.setTextSize(16f);
         nowLabelPaint.setColor(COLOR_CURRENT);
         nowLabelPaint.setFakeBoldText(true);
 
-        Calendar now = Calendar.getInstance(TimeZone.getDefault());
+        Calendar now = Calendar.getInstance(TimeZone.getTimeZone("GMT+3"));
         currentHour = now.get(Calendar.HOUR_OF_DAY);
         currentMinute = now.get(Calendar.MINUTE);
 
@@ -154,7 +164,7 @@ public class TideChartView extends View {
         }
 
         if (events != null) {
-            Calendar now = Calendar.getInstance(TimeZone.getDefault());
+            Calendar now = Calendar.getInstance(TimeZone.getTimeZone("GMT+3"));
             long nowMs = now.getTimeInMillis();
             TideCalculator.TideEvent lastEvent = null;
             for (TideCalculator.TideEvent e : events) {
@@ -167,7 +177,7 @@ public class TideChartView extends View {
             }
         }
 
-        Calendar now = Calendar.getInstance(TimeZone.getDefault());
+        Calendar now = Calendar.getInstance(TimeZone.getTimeZone("GMT+3"));
         currentHour = now.get(Calendar.HOUR_OF_DAY);
         currentMinute = now.get(Calendar.MINUTE);
 
@@ -208,7 +218,7 @@ public class TideChartView extends View {
         float hRange = maxH - minH;
         if (hRange <= 0) hRange = 1f;
 
-        // Horizontal grid + height axis labels (ENLARGED)
+        // Horizontal grid + height axis labels
         int numHLines = 4;
         for (int i = 0; i <= numHLines; i++) {
             float y = padT + chartH * i / numHLines;
@@ -218,7 +228,7 @@ public class TideChartView extends View {
             canvas.drawText(label, 4, y + 7, labelPaint);
         }
 
-        // Vertical grid + hour axis labels (ENLARGED to 24f via labelPaint)
+        // Vertical grid + hour axis labels
         String[] hourLabels = {"0", "3", "6", "9", "12", "15", "18", "21", "24"};
         for (int i = 0; i < hourLabels.length; i++) {
             float x = padL + chartW * i / (hourLabels.length - 1);
@@ -228,7 +238,7 @@ public class TideChartView extends View {
 
         if (tidePoints == null || tidePoints.isEmpty()) return;
 
-        // Build tide curve
+        // Build tide curve path
         Path curvePath = new Path();
         Path fillPath = new Path();
 
@@ -263,11 +273,13 @@ public class TideChartView extends View {
         curvePaint.setAlpha((int)(255 * animProgress));
         canvas.drawPath(curvePath, curvePaint);
 
-        // High/Low tide markers with ENLARGED labels
+        // ===== High/Low tide markers with SMART LABEL POSITIONING =====
+        // HIGH: time label ABOVE the peak (y - 22f), height label BELOW (y + 26f)
+        // LOW:  time label BELOW the trough (y + 26f), height label ABOVE (y - 22f)
         if (tideEvents != null && animProgress >= 0.7f) {
             int markerAlpha = (int)(255 * Math.min(1f, (animProgress - 0.7f) / 0.3f));
             for (TideCalculator.TideEvent event : tideEvents) {
-                Calendar evtCal = Calendar.getInstance(TimeZone.getDefault());
+                Calendar evtCal = Calendar.getInstance(TimeZone.getTimeZone("GMT+3"));
                 evtCal.setTimeInMillis(event.timeMillis);
                 float evtHour = evtCal.get(Calendar.HOUR_OF_DAY) + evtCal.get(Calendar.MINUTE) / 60.0f;
                 float x = padL + (chartW * evtHour / 24.0f);
@@ -287,23 +299,32 @@ public class TideChartView extends View {
                 whiteCenter.setAlpha(markerAlpha);
                 canvas.drawCircle(x, y, 4f, whiteCenter);
 
-                // TIME label — ENLARGED highLowPaint 22f
+                // TIME label — formatted with English AM/PM
                 highLowPaint.setColor(color);
                 highLowPaint.setAlpha(markerAlpha);
                 String timeLabel = formatEventTime(evtCal);
                 float timeWidth = highLowPaint.measureText(timeLabel);
-                canvas.drawText(timeLabel, x - timeWidth / 2, y - 22f, highLowPaint);
 
-                // HEIGHT label — ENLARGED heightLabelPaint 18f
+                // HEIGHT label — uses "m" not Arabic "م"
                 heightLabelPaint.setColor(color);
                 heightLabelPaint.setAlpha(markerAlpha);
-                String heightStr = String.format(Locale.US, "%.2f\u0645", event.height);
+                String heightStr = String.format(Locale.US, "%.2fm", event.height);
                 float hWidth = heightLabelPaint.measureText(heightStr);
-                canvas.drawText(heightStr, x - hWidth / 2, y + 26f, heightLabelPaint);
+
+                // SMART POSITIONING:
+                if (event.isHigh) {
+                    // HIGH tide: time above, height below
+                    canvas.drawText(timeLabel, x - timeWidth / 2, y - 22f, highLowPaint);
+                    canvas.drawText(heightStr, x - hWidth / 2, y + 26f, heightLabelPaint);
+                } else {
+                    // LOW tide: time below, height above
+                    canvas.drawText(timeLabel, x - timeWidth / 2, y + 26f, highLowPaint);
+                    canvas.drawText(heightStr, x - hWidth / 2, y - 22f, heightLabelPaint);
+                }
             }
         }
 
-        // Current time indicator
+        // ===== Current time indicator =====
         if (animProgress >= 0.4f) {
             float currentTimeHour = currentHour + currentMinute / 60.0f;
             float cx = padL + (chartW * currentTimeHour / 24.0f);
@@ -322,18 +343,18 @@ public class TideChartView extends View {
             nowDotPaint.setAlpha(255);
             canvas.drawCircle(cx, cy, 7f, nowDotPaint);
 
-            // Now label — ENLARGED nowLabelPaint 16f
+            // Now label — English AM/PM format
             String nowLabel = String.format(Locale.US, "%d:%02d",
                 currentHour > 12 ? currentHour - 12 : (currentHour == 0 ? 12 : currentHour),
-                currentMinute) + (currentHour >= 12 ? "\u0645" : "\u0635");
+                currentMinute) + (currentHour >= 12 ? "PM" : "AM");
             nowLabelPaint.setAlpha(220);
             canvas.drawText(nowLabel, cx - 24, padT - 6, nowLabelPaint);
         }
 
-        // Rising/Falling badge
+        // ===== Rising/Falling badge =====
         if (animProgress >= 0.9f) {
             int badgeAlpha = (int)(255 * Math.min(1f, (animProgress - 0.9f) / 0.1f));
-            String badgeText = isRising ? "\u0645\u062F \u2191" : "\u062C\u0632\u0631 \u2193";
+            String badgeText = isRising ? "\u0645\u062F \u2191" : "\u062C\u0632\u0631 \u2193"; // مد ↑ / جزر ↓
             int badgeColor = isRising ? COLOR_BADGE_RISING : COLOR_BADGE_FALLING;
 
             float badgeX = w - padR - 80f;
@@ -352,11 +373,14 @@ public class TideChartView extends View {
         }
     }
 
+    /**
+     * Format event time using English AM/PM (NOT Arabic ص/م).
+     */
     private String formatEventTime(Calendar cal) {
         int h = cal.get(Calendar.HOUR);
         if (h == 0) h = 12;
         int m = cal.get(Calendar.MINUTE);
-        String ap = cal.get(Calendar.AM_PM) == Calendar.AM ? "\u0635" : "\u0645";
+        String ap = cal.get(Calendar.AM_PM) == Calendar.AM ? "AM" : "PM";
         return String.format(Locale.US, "%d:%02d%s", h, m, ap);
     }
 }
