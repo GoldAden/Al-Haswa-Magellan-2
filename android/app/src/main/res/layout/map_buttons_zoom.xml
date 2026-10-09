@@ -7,13 +7,6 @@
   android:layout_height="wrap_content"
   android:orientation="vertical">
   <com.google.android.material.floatingactionbutton.FloatingActionButton
-    android:id="@+id/nav_north"
-    style="@style/MwmWidget.MapButton"
-    app:srcCompat="@drawable/ic_north_arrow"
-    android:layout_marginBottom="@dimen/margin_half"
-    android:visibility="visible"
-    android:contentDescription="@string/north_arrow"/>
-  <com.google.android.material.floatingactionbutton.FloatingActionButton
     android:id="@+id/nav_zoom_in"
     style="@style/MwmWidget.MapButton.Zoom"
     app:srcCompat="@drawable/ic_plus"
