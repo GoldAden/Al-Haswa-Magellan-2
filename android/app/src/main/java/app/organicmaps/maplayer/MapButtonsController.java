@@ -56,8 +56,6 @@ public class MapButtonsController extends Fragment
   @Nullable
   private View mBottomButtonsFrame;
   @Nullable
-  private LayersButton mToggleMapLayerButton;
-  @Nullable
   FloatingActionButton mTrackRecordingStatusButton;
   @Nullable
   private MyPositionButton mNavMyPosition;
@@ -128,14 +126,7 @@ public class MapButtonsController extends Fragment
       northButton.setVisibility(View.VISIBLE);  // Al-Haswa: always show compass button
     }
 
-    // Some buttons do not exist in navigation mode
-    mToggleMapLayerButton = mFrame.findViewById(R.id.layers_button);
-    if (mToggleMapLayerButton != null)
-    {
-      mToggleMapLayerButton.setOnClickListener(
-          view -> mMapButtonClickListener.onMapButtonClick(MapButtons.toggleMapLayer));
-      mToggleMapLayerButton.setVisibility(View.VISIBLE);
-    }
+    // Al-Haswa: Layers button removed — compass replaced it at top-left
     mMapButtonsViewModel.setTopButtonsMarginTop(-1);
     mTrackRecordingStatusButton = mFrame.findViewById(R.id.track_recording_status);
     if (mTrackRecordingStatusButton != null)
@@ -177,8 +168,7 @@ public class MapButtonsController extends Fragment
 
     if (northButton != null)
       mButtonsMap.put(MapButtons.north, northButton);
-    if (mToggleMapLayerButton != null)
-      mButtonsMap.put(MapButtons.toggleMapLayer, mToggleMapLayerButton);
+    // Al-Haswa: toggleMapLayer removed from buttons map
     if (menuButton != null)
       mButtonsMap.put(MapButtons.menu, menuButton);
     if (helpButton != null)
@@ -203,10 +193,7 @@ public class MapButtonsController extends Fragment
     switch (button)
     {
     case zoom: UiUtils.showIf(show && Config.showZoomButtons(), buttonView); break;
-    case toggleMapLayer:
-      if (mToggleMapLayerButton != null)
-        UiUtils.showIf(show && !isInNavigationMode(), mToggleMapLayerButton);
-      break;
+    // Al-Haswa: toggleMapLayer case removed — layers button no longer exists
     case myPosition:
       if (mNavMyPosition != null)
         mNavMyPosition.showButton(show);
@@ -341,16 +328,7 @@ public class MapButtonsController extends Fragment
     }
   }
 
-  public void updateLayerButton()
-  {
-    if (mToggleMapLayerButton == null)
-      return;
-    final boolean buttonSelected = TrafficManager.INSTANCE.isEnabled() || IsolinesManager.isEnabled()
-                                || SubwayManager.isEnabled() || Framework.nativeIsOutdoorsLayerEnabled()
-                                || Framework.nativeIsHikingLayerEnabled() || Framework.nativeIsCyclingLayerEnabled()
-                                || Framework.nativeIsBackgroundTilesEnabled();
-    mToggleMapLayerButton.setHasActiveLayers(buttonSelected);
-  }
+  // Al-Haswa: updateLayerButton() removed — layers button no longer exists
 
   private boolean isBehindPlacePage(View v)
   {
@@ -504,7 +482,7 @@ public class MapButtonsController extends Fragment
     if (mMapButtonsViewModel.getLayoutMode().getValue() == LayoutMode.navigation)
       mSearchWheel.onResume();
     updateMenuBadge();
-    updateLayerButton();
+    // updateLayerButton() removed — Al-Haswa
     updateHelpButtonIcon();
   }
 
@@ -535,7 +513,6 @@ public class MapButtonsController extends Fragment
   public enum MapButtons
   {
     myPosition,
-    toggleMapLayer,
     zoomIn,
     zoomOut,
     zoom,
