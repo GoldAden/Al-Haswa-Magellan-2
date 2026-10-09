@@ -233,9 +233,8 @@ public class MapButtonsController extends Fragment
     final View northBtn = mButtonsMap.get(MapButtons.north);
     if (northBtn == null)
       return;
-    // Al-Haswa Magellan: always visible, always rotates to show north direction
-    if (northBtn instanceof FloatingActionButton)
-      northBtn.setRotation((float) angleDeg);
+    // Al-Haswa: compass button always visible, fixed pointing north (no rotation)
+    // northBtn stays at 0° rotation — arrow always points up = map north
   }
 
   void animateIconBlinking(boolean show, @NonNull FloatingActionButton button)
