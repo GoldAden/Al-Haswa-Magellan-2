@@ -172,7 +172,7 @@ public final class Config
 
   public static boolean isAutodownloadEnabled()
   {
-    return getBool(KEY_DOWNLOADER_AUTO, false)  // Al-Haswa: auto-download OFF by default;
+    return getBool(KEY_DOWNLOADER_AUTO, false);  // Al-Haswa: auto-download OFF by default
   }
 
   public static void setAutodownloadEnabled(boolean enabled)
