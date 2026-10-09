@@ -193,7 +193,7 @@ public class MapButtonsController extends Fragment
     switch (button)
     {
     case zoom: UiUtils.showIf(show && Config.showZoomButtons(), buttonView); break;
-    // Al-Haswa: toggleMapLayer case removed — layers button no longer exists
+    case toggleMapLayer: break;  // Al-Haswa: no-op, layers button removed
     case myPosition:
       if (mNavMyPosition != null)
         mNavMyPosition.showButton(show);
@@ -328,7 +328,8 @@ public class MapButtonsController extends Fragment
     }
   }
 
-  // Al-Haswa: updateLayerButton() removed — layers button no longer exists
+  // Al-Haswa: layers button removed, keeping method as no-op for ToggleMapLayerFragment
+  public void updateLayerButton() {}
 
   private boolean isBehindPlacePage(View v)
   {
@@ -520,6 +521,7 @@ public class MapButtonsController extends Fragment
     bookmarks,
     menu,
     help,
+    toggleMapLayer,  // Al-Haswa: kept for switch compatibility, button not wired
     trackRecordingStatus,
     north
   }
