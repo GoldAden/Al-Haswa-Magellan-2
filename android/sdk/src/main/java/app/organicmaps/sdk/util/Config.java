@@ -172,7 +172,7 @@ public final class Config
 
   public static boolean isAutodownloadEnabled()
   {
-    return getBool(KEY_DOWNLOADER_AUTO, true);
+    return getBool(KEY_DOWNLOADER_AUTO, false);
   }
 
   public static void setAutodownloadEnabled(boolean enabled)
@@ -316,7 +316,7 @@ public final class Config
       }
 
       final var isSystemThemeAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
-      final var defaultTheme = isSystemThemeAvailable ? UiTheme.SYSTEM : UiTheme.SCHEDULED;
+      final var defaultTheme = UiTheme.SCHEDULED;
       final var savedTheme = value.isEmpty() ? defaultTheme : UiTheme.ofValue(value);
       final var shouldReplaceSystemTheme = savedTheme == UiTheme.SYSTEM && !isSystemThemeAvailable;
       return shouldReplaceSystemTheme ? UiTheme.SCHEDULED : savedTheme;
