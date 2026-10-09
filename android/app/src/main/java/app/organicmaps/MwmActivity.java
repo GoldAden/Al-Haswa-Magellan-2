@@ -236,6 +236,14 @@ public class MwmActivity extends BaseMwmFragmentActivity
 
     Framework.nativeRestoreDownloadQueue();
 
+    // Al-Haswa: On first launch, center map on Sana'a, Yemen
+    if (Config.isFirstLaunch(this))
+    {
+      Framework.nativeSetViewportCenter(15.3694, 44.1911, 5);
+      Framework.nativeStopLocationFollow();
+      Framework.nativeSetShowDownloadedRegions(false);
+    }
+
     if (RoutingController.get().isPlanning())
       restoreRoutingUI(MapButtonsController.LayoutMode.planning);
     else if (RoutingController.get().isNavigating())
